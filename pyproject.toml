@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "dbt-superset-lineage"
+version = "0.1.0"
+description = '''
+A package for extracting dashboards from Apache Superset
+to dbt docs as exposures.
+'''
+authors = ["Michal Kolacek <mkolacek@slido.com>"]
+readme = "README.md"
+
+[tool.poetry.scripts]
+dbt-superset-lineage = "dbt_superset_lineage.__init__:app"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+typer = "^0.4.0"
+pathlib = "^1.0.1"
+"ruamel.yaml" = "^0.17.17"
+sqlfluff = "^0.8.2"
+requests = "^2.26.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "^5.2"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
