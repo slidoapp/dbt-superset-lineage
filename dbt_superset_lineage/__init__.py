@@ -20,12 +20,15 @@ def get_tables_from_sql_simple(sql):
     sql = re.sub(r'(--.*)|(#.*)', '', sql)  # remove line comments
     sql = re.sub(r'\s+', ' ', sql).lower()  # make it one line
     sql = re.sub(r'(/\*(.|\n)*\*/)', '', sql)  # remove block comments
+
     regex = re.compile(r'\b(from|join)\b\s+(\"?(\w+)\"?(\.))?\"?(\w+)\"?\b')  # regex for tables
     tables_match = regex.findall(sql)
     tables = [table[2] + '.' + table[4] if table[2] != '' else table[4]  # full name if with schema
               for table in tables_match
               if table[4] != 'unnest']  # remove false positive
+
     tables = list(set(tables))  # remove duplicates
+
     return tables
 
 
@@ -59,15 +62,15 @@ def get_tables_from_dbt(dbt_catalog, dbt_db_name):
             schema = catalog_subset[table]['metadata']['schema']
             database = catalog_subset[table]['metadata']['database']
             source = catalog_subset[table]['unique_id'].split('.')[-2]
-            table_id = schema + '.' + name
+            table_key = schema + '.' + name
 
             if dbt_db_name is None or database == dbt_db_name:
                 # fail if it breaks uniqueness constraint
-                assert table_id not in tables, \
-                    f"Table {table_id} is a duplicate name (schema + table) across databases. " \
+                assert table_key not in tables, \
+                    f"Table {table_key} is a duplicate name (schema + table) across databases. " \
                     "This would result in incorrect matching between Superset and dbt. " \
                     "To fix this, remove duplicates or add ``dbt_db_name``."
-                tables[table_id] = {
+                tables[table_key] = {
                     'name': name,
                     'schema': schema,
                     'database': database,
@@ -78,6 +81,7 @@ def get_tables_from_dbt(dbt_catalog, dbt_db_name):
                 }
 
     assert tables, "Catalog is empty!"
+
     return tables
 
 
@@ -168,10 +172,10 @@ def get_datasets_from_superset(superset, dashboards_datasets, dbt_tables,
                 database_name = r['database']['database_name']
                 database_id = r['database']['id']
 
-                dataset_id = f'{schema}.{name}'  # same format as in dashboards
+                dataset_key = f'{schema}.{name}'  # same format as in dashboards
 
                 # only add datasets that are in dashboards, optionally limit to one database
-                if dataset_id in dashboards_datasets \
+                if dataset_key in dashboards_datasets \
                         and (superset_db_id is None or database_id == superset_db_id):
                     kind = r['kind']
                     if kind == 'virtual':  # built on custom sql
@@ -180,11 +184,11 @@ def get_datasets_from_superset(superset, dashboards_datasets, dbt_tables,
                         tables = [table if '.' in table else f'{schema}.{table}'
                                   for table in tables]
                     else:  # built on tables
-                        tables = [dataset_id]
+                        tables = [dataset_key]
                     dbt_refs = [dbt_tables[table]['ref'] for table in tables
                                 if table in dbt_tables]
 
-                    datasets[dataset_id] = {
+                    datasets[dataset_key] = {
                         'name': name,
                         'schema': schema,
                         'database': database_name,
