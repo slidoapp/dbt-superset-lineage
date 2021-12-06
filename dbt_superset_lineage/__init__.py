@@ -81,7 +81,7 @@ def get_tables_from_dbt(dbt_catalog, dbt_db_name):
     return tables
 
 
-def get_dashboards_from_superset(superset, superset_domain, superset_db_id):
+def get_dashboards_from_superset(superset, superset_url, superset_db_id):
     logging.info("Getting published dashboards from Superset.")
     page_number = 0
     dashboards_id = []
@@ -107,7 +107,7 @@ def get_dashboards_from_superset(superset, superset_domain, superset_db_id):
 
         dashboard_id = result['id']
         title = result['dashboard_title']
-        url = 'https://' + superset_domain + '/superset/dashboard/' + str(dashboard_id)
+        url = superset_url + 'superset/dashboard/' + str(dashboard_id)
         owner_name = result['owners'][0]['first_name'] + ' ' + result['owners'][0]['last_name']
 
         # take unique dataset names, formatted as "[database].[schema].[table]" by Superset
@@ -246,7 +246,7 @@ class YamlFormatted(ruamel.yaml.YAML):
 
 
 def do_docs_to_superset(dbt_project_dir, exposures_path, dbt_db_name,
-                        superset_domain, superset_db_id, sql_dialect,
+                        superset_url, superset_db_id, sql_dialect,
                         superset_access_token, superset_refresh_token):
 
     # require at least one token for Superset
@@ -255,7 +255,7 @@ def do_docs_to_superset(dbt_project_dir, exposures_path, dbt_db_name,
            "to your environment variables or provide in CLI " \
            "via ``superset-access-token`` or ``superset-refresh-token``."
 
-    superset = Superset('https://' + superset_domain + '/api/v1',
+    superset = Superset(superset_url + 'api/v1',
                         access_token=superset_access_token, refresh_token=superset_refresh_token)
 
     logging.info("Starting the script!")
@@ -276,7 +276,7 @@ def do_docs_to_superset(dbt_project_dir, exposures_path, dbt_db_name,
 
     dbt_tables = get_tables_from_dbt(dbt_catalog, dbt_db_name)
     dashboards, dashboards_datasets = get_dashboards_from_superset(superset,
-                                                                   superset_domain,
+                                                                   superset_url,
                                                                    superset_db_id)
     datasets = get_datasets_from_superset(superset,
                                           dashboards_datasets,
@@ -312,14 +312,14 @@ def docs_to_superset(dbt_project_dir: str = typer.Option('.', help=""),
                                                         help="If you change this, the path needs to be added"
                                                              "to source-paths in dbt_project.yml."),
                      dbt_db_name: str = typer.Option(None, help=""),
-                     superset_domain: str = typer.Argument(..., help=""),  # superset.sli.do
+                     superset_url: str = typer.Argument(..., help=""),  # superset.sli.do
                      superset_db_id: int = typer.Option(None, help=""),  # 2
                      sql_dialect: str = typer.Option('ansi', help=""),
                      superset_access_token: str = typer.Option(None, envvar="SUPERSET_ACCESS_TOKEN"),
                      superset_refresh_token: str = typer.Option(None, envvar="SUPERSET_REFRESH_TOKEN")):
 
     do_docs_to_superset(dbt_project_dir, exposures_path, dbt_db_name,
-                        superset_domain, superset_db_id, sql_dialect,
+                        superset_url, superset_db_id, sql_dialect,
                         superset_access_token, superset_refresh_token)
 
 
