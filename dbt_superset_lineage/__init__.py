@@ -89,7 +89,7 @@ def get_dashboards_from_superset(superset, superset_url, superset_db_id):
         logging.info("Getting page %d.", page_number+1)
         res = superset.request('GET', f'/dashboard/?q={{"page":{page_number},"page_size":100}}')
         result = res['result']
-        if len(result) > 0:
+        if result:
             for r in result:
                 if r['published']:
                     dashboards_id.append(r['id'])
@@ -161,7 +161,7 @@ def get_datasets_from_superset(superset, dashboards_datasets, dbt_tables,
         logging.info("Getting page %d.", page_number+1)
         res = superset.request('GET', f'/dataset/?q={{"page":{page_number},"page_size":100}}')
         result = res['result']
-        if len(result) > 0:
+        if result:
             for r in result:
                 name = r['table_name']
                 schema = r['schema']
