@@ -86,7 +86,7 @@ def get_dashboards_from_superset(superset, superset_url, superset_db_id):
     page_number = 0
     dashboards_id = []
     while True:
-        logging.info("Getting page %d.", page_number+1)
+        logging.info("Getting page %d.", page_number + 1)
         res = superset.request('GET', f'/dashboard/?q={{"page":{page_number},"page_size":100}}')
         result = res['result']
         if result:
@@ -101,7 +101,7 @@ def get_dashboards_from_superset(superset, superset_url, superset_db_id):
     dashboards = []
     dashboards_datasets_w_db = set()
     for i, d in enumerate(dashboards_id):
-        logging.info("Getting info for dashboard %d/%d.", i+1, len(dashboards_id))
+        logging.info("Getting info for dashboard %d/%d.", i + 1, len(dashboards_id))
         res = superset.request('GET', f'/dashboard/{d}')
         result = res['result']
 
@@ -158,7 +158,7 @@ def get_datasets_from_superset(superset, dashboards_datasets, dbt_tables,
     page_number = 0
     datasets = {}
     while True:
-        logging.info("Getting page %d.", page_number+1)
+        logging.info("Getting page %d.", page_number + 1)
         res = superset.request('GET', f'/dataset/?q={{"page":{page_number},"page_size":100}}')
         result = res['result']
         if result:
