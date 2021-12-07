@@ -111,7 +111,7 @@ def get_dashboards_from_superset(superset, superset_url, superset_db_id):
 
         dashboard_id = result['id']
         title = result['dashboard_title']
-        url = superset_url + 'superset/dashboard/' + str(dashboard_id)
+        url = superset_url + '/superset/dashboard/' + str(dashboard_id)
         owner_name = result['owners'][0]['first_name'] + ' ' + result['owners'][0]['last_name']
 
         # take unique dataset names, formatted as "[database].[schema].[table]" by Superset
@@ -259,7 +259,7 @@ def do_docs_to_superset(dbt_project_dir, exposures_path, dbt_db_name,
            "to your environment variables or provide in CLI " \
            "via ``superset-access-token`` or ``superset-refresh-token``."
 
-    superset = Superset(superset_url + 'api/v1',
+    superset = Superset(superset_url + '/api/v1',
                         access_token=superset_access_token, refresh_token=superset_refresh_token)
 
     logging.info("Starting the script!")
