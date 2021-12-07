@@ -20,12 +20,15 @@ def get_tables_from_sql_simple(sql):
     sql = re.sub(r'(--.*)|(#.*)', '', sql)  # remove line comments
     sql = re.sub(r'\s+', ' ', sql).lower()  # make it one line
     sql = re.sub(r'(/\*(.|\n)*\*/)', '', sql)  # remove block comments
+
     regex = re.compile(r'\b(from|join)\b\s+(\"?(\w+)\"?(\.))?\"?(\w+)\"?\b')  # regex for tables
     tables_match = regex.findall(sql)
     tables = [table[2] + '.' + table[4] if table[2] != '' else table[4]  # full name if with schema
               for table in tables_match
               if table[4] != 'unnest']  # remove false positive
+
     tables = list(set(tables))  # remove duplicates
+
     return tables
 
 
@@ -59,15 +62,15 @@ def get_tables_from_dbt(dbt_catalog, dbt_db_name):
             schema = catalog_subset[table]['metadata']['schema']
             database = catalog_subset[table]['metadata']['database']
             source = catalog_subset[table]['unique_id'].split('.')[-2]
-            table_id = schema + '.' + name
+            table_key = schema + '.' + name
 
             if dbt_db_name is None or database == dbt_db_name:
                 # fail if it breaks uniqueness constraint
-                assert table_id not in tables, \
-                    f"Table {table_id} is a duplicate name (schema + table) across databases. " \
+                assert table_key not in tables, \
+                    f"Table {table_key} is a duplicate name (schema + table) across databases. " \
                     "This would result in incorrect matching between Superset and dbt. " \
                     "To fix this, remove duplicates or add ``dbt_db_name``."
-                tables[table_id] = {
+                tables[table_key] = {
                     'name': name,
                     'schema': schema,
                     'database': database,
@@ -78,10 +81,11 @@ def get_tables_from_dbt(dbt_catalog, dbt_db_name):
                 }
 
     assert tables, "Catalog is empty!"
+
     return tables
 
 
-def get_dashboards_from_superset(superset, superset_domain, superset_db_id):
+def get_dashboards_from_superset(superset, superset_url, superset_db_id):
     logging.info("Getting published dashboards from Superset.")
     page_number = 0
     dashboards_id = []
@@ -89,7 +93,7 @@ def get_dashboards_from_superset(superset, superset_domain, superset_db_id):
         logging.info("Getting page %d.", page_number+1)
         res = superset.request('GET', f'/dashboard/?q={{"page":{page_number},"page_size":100}}')
         result = res['result']
-        if len(result) > 0:
+        if result:
             for r in result:
                 if r['published']:
                     dashboards_id.append(r['id'])
@@ -107,7 +111,7 @@ def get_dashboards_from_superset(superset, superset_domain, superset_db_id):
 
         dashboard_id = result['id']
         title = result['dashboard_title']
-        url = 'https://' + superset_domain + '/superset/dashboard/' + str(dashboard_id)
+        url = superset_url + '/superset/dashboard/' + str(dashboard_id)
         owner_name = result['owners'][0]['first_name'] + ' ' + result['owners'][0]['last_name']
 
         # take unique dataset names, formatted as "[database].[schema].[table]" by Superset
@@ -161,17 +165,17 @@ def get_datasets_from_superset(superset, dashboards_datasets, dbt_tables,
         logging.info("Getting page %d.", page_number+1)
         res = superset.request('GET', f'/dataset/?q={{"page":{page_number},"page_size":100}}')
         result = res['result']
-        if len(result) > 0:
+        if result:
             for r in result:
                 name = r['table_name']
                 schema = r['schema']
                 database_name = r['database']['database_name']
                 database_id = r['database']['id']
 
-                dataset_id = f'{schema}.{name}'  # same format as in dashboards
+                dataset_key = f'{schema}.{name}'  # same format as in dashboards
 
                 # only add datasets that are in dashboards, optionally limit to one database
-                if dataset_id in dashboards_datasets \
+                if dataset_key in dashboards_datasets \
                         and (superset_db_id is None or database_id == superset_db_id):
                     kind = r['kind']
                     if kind == 'virtual':  # built on custom sql
@@ -180,11 +184,11 @@ def get_datasets_from_superset(superset, dashboards_datasets, dbt_tables,
                         tables = [table if '.' in table else f'{schema}.{table}'
                                   for table in tables]
                     else:  # built on tables
-                        tables = [dataset_id]
+                        tables = [dataset_key]
                     dbt_refs = [dbt_tables[table]['ref'] for table in tables
                                 if table in dbt_tables]
 
-                    datasets[dataset_id] = {
+                    datasets[dataset_key] = {
                         'name': name,
                         'schema': schema,
                         'database': database_name,
@@ -246,7 +250,7 @@ class YamlFormatted(ruamel.yaml.YAML):
 
 
 def do_docs_to_superset(dbt_project_dir, exposures_path, dbt_db_name,
-                        superset_domain, superset_db_id, sql_dialect,
+                        superset_url, superset_db_id, sql_dialect,
                         superset_access_token, superset_refresh_token):
 
     # require at least one token for Superset
@@ -255,7 +259,7 @@ def do_docs_to_superset(dbt_project_dir, exposures_path, dbt_db_name,
            "to your environment variables or provide in CLI " \
            "via ``superset-access-token`` or ``superset-refresh-token``."
 
-    superset = Superset('https://' + superset_domain + '/api/v1',
+    superset = Superset(superset_url + '/api/v1',
                         access_token=superset_access_token, refresh_token=superset_refresh_token)
 
     logging.info("Starting the script!")
@@ -276,7 +280,7 @@ def do_docs_to_superset(dbt_project_dir, exposures_path, dbt_db_name,
 
     dbt_tables = get_tables_from_dbt(dbt_catalog, dbt_db_name)
     dashboards, dashboards_datasets = get_dashboards_from_superset(superset,
-                                                                   superset_domain,
+                                                                   superset_url,
                                                                    superset_db_id)
     datasets = get_datasets_from_superset(superset,
                                           dashboards_datasets,
@@ -312,14 +316,14 @@ def docs_to_superset(dbt_project_dir: str = typer.Option('.', help=""),
                                                         help="If you change this, the path needs to be added"
                                                              "to source-paths in dbt_project.yml."),
                      dbt_db_name: str = typer.Option(None, help=""),
-                     superset_domain: str = typer.Argument(..., help=""),  # superset.sli.do
+                     superset_url: str = typer.Argument(..., help=""),  # superset.sli.do
                      superset_db_id: int = typer.Option(None, help=""),  # 2
                      sql_dialect: str = typer.Option('ansi', help=""),
                      superset_access_token: str = typer.Option(None, envvar="SUPERSET_ACCESS_TOKEN"),
                      superset_refresh_token: str = typer.Option(None, envvar="SUPERSET_REFRESH_TOKEN")):
 
     do_docs_to_superset(dbt_project_dir, exposures_path, dbt_db_name,
-                        superset_domain, superset_db_id, sql_dialect,
+                        superset_url, superset_db_id, sql_dialect,
                         superset_access_token, superset_refresh_token)
 
 
