@@ -39,7 +39,7 @@ def get_tables_from_sql(sql, dialect):
             sqlfluff.api.simple.APIParsingError) as e:
         logging.warning("Parsing SQL through sqlfluff failed. "
                         "Let me attempt this via regular expressions at least and "
-                        "check the error and problematic query:\n%s",
+                        "check the problematic query and error below.\n%s",
                         sql, exc_info=e)
         tables_cleaned = get_tables_from_sql_simple(sql)
 
