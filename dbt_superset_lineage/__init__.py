@@ -1,5 +1,6 @@
 import typer
 from .pull_dashboards import main as pull_dashboards_main
+from .push_descriptions import main as push_descriptions_main
 
 app = typer.Typer()
 
@@ -19,6 +20,20 @@ def pull_dashboards(dbt_project_dir: str = typer.Option('.', help=""),
     pull_dashboards_main(dbt_project_dir, exposures_path, dbt_db_name,
                          superset_url, superset_db_id, sql_dialect,
                          superset_access_token, superset_refresh_token)
+
+
+@app.command()
+def push_descriptions(dbt_project_dir: str = typer.Option('.', help=""),
+                      dbt_db_name: str = typer.Option(None, help=""),
+                      superset_url: str = typer.Argument(..., help=""),
+                      superset_db_id: int = typer.Option(None, help=""),
+                      superset_refresh_columns: bool = typer.Option(False, help=""),
+                      superset_access_token: str = typer.Option(None, envvar="SUPERSET_ACCESS_TOKEN"),
+                      superset_refresh_token: str = typer.Option(None, envvar="SUPERSET_REFRESH_TOKEN")):
+
+    push_descriptions_main(dbt_project_dir, dbt_db_name,
+                           superset_url, superset_db_id, superset_refresh_columns,
+                           superset_access_token, superset_refresh_token)
 
 
 if __name__ == '__main__':
