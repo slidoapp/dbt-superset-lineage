@@ -120,9 +120,10 @@ def convert_markdown_to_plain_text(md_string):
     single_line = re.sub(r'\s+', ' ', text)
 
     # make fixes
-    final_line = re.sub('→', '->', single_line)
+    single_line = re.sub('→', '->', single_line)
+    single_line = re.sub('<null>', '"null"', single_line)
 
-    return final_line
+    return single_line
 
 
 def merge_columns_info(dataset, tables):
