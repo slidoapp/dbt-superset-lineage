@@ -27,12 +27,12 @@ def push_descriptions(dbt_project_dir: str = typer.Option('.', help=""),
                       dbt_db_name: str = typer.Option(None, help=""),
                       superset_url: str = typer.Argument(..., help=""),
                       superset_db_id: int = typer.Option(None, help=""),
-                      superset_should_refresh: bool = typer.Option(False, help=""),
+                      superset_refresh_columns: bool = typer.Option(False, help=""),
                       superset_access_token: str = typer.Option(None, envvar="SUPERSET_ACCESS_TOKEN"),
                       superset_refresh_token: str = typer.Option(None, envvar="SUPERSET_REFRESH_TOKEN")):
 
     push_descriptions_main(dbt_project_dir, dbt_db_name,
-                           superset_url, superset_db_id, superset_should_refresh,
+                           superset_url, superset_db_id, superset_refresh_columns,
                            superset_access_token, superset_refresh_token)
 
 

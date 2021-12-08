@@ -169,7 +169,7 @@ def put_columns_to_superset(superset, dataset):
 
 
 def main(dbt_project_dir, dbt_db_name,
-         superset_url, superset_db_id, superset_should_refresh,
+         superset_url, superset_db_id, superset_refresh_columns,
          superset_access_token, superset_refresh_token):
 
     # require at least one token for Superset
@@ -195,7 +195,7 @@ def main(dbt_project_dir, dbt_db_name,
         logging.info("Processing dataset %d/%d.", i + 1, len(sst_datasets))
         sst_dataset_id = sst_dataset['id']
         try:
-            if superset_should_refresh:
+            if superset_refresh_columns:
                 refresh_columns_in_superset(superset, sst_dataset_id)
             sst_dataset_w_cols = add_superset_columns(superset, sst_dataset)
             sst_dataset_w_cols_new = merge_columns_info(sst_dataset_w_cols, dbt_tables)
