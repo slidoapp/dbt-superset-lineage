@@ -48,16 +48,17 @@ def get_tables_from_sql(sql, dialect):
     return tables
 
 
-def get_tables_from_dbt(dbt_catalog, dbt_db_name):
+def get_tables_from_dbt(dbt_manifest, dbt_db_name):
     tables = {}
     for table_type in ['nodes', 'sources']:
-        catalog_subset = dbt_catalog[table_type]
+        manifest_subset = dbt_manifest[table_type]
 
-        for table in catalog_subset:
-            name = catalog_subset[table]['metadata']['name']
-            schema = catalog_subset[table]['metadata']['schema']
-            database = catalog_subset[table]['metadata']['database']
-            source = catalog_subset[table]['unique_id'].split('.')[-2]
+        for table_key_long in manifest_subset:
+            table = manifest_subset[table_key_long]
+            name = table['name']
+            schema = table['schema']
+            database = table['database']
+            source = table['unique_id'].split('.')[-2]
             table_key = schema + '.' + name
 
             if dbt_db_name is None or database == dbt_db_name:
@@ -76,7 +77,7 @@ def get_tables_from_dbt(dbt_catalog, dbt_db_name):
                         else f"source('{source}', '{name}')"
                 }
 
-    assert tables, "Catalog is empty!"
+    assert tables, "Manifest is empty!"
 
     return tables
 
@@ -260,8 +261,8 @@ def main(dbt_project_dir, exposures_path, dbt_db_name,
 
     logging.info("Starting the script!")
 
-    with open(f'{dbt_project_dir}/target/catalog.json') as f:
-        dbt_catalog = json.load(f)
+    with open(f'{dbt_project_dir}/target/manifest.json') as f:
+        dbt_manifest = json.load(f)
 
     exposures_yaml_path = dbt_project_dir + exposures_path
 
@@ -274,7 +275,7 @@ def main(dbt_project_dir, exposures_path, dbt_db_name,
         Path(exposures_yaml_path).touch(exist_ok=True)
         exposures = {}
 
-    dbt_tables = get_tables_from_dbt(dbt_catalog, dbt_db_name)
+    dbt_tables = get_tables_from_dbt(dbt_manifest, dbt_db_name)
     dashboards, dashboards_datasets = get_dashboards_from_superset(superset,
                                                                    superset_url,
                                                                    superset_db_id)
