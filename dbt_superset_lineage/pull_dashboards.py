@@ -53,7 +53,7 @@ def get_tables_from_dbt(dbt_catalog, dbt_db_name):
     for table_type in ['nodes', 'sources']:
         catalog_subset = dbt_catalog[table_type]
 
-        for table in list(catalog_subset.keys()):
+        for table in catalog_subset:
             name = catalog_subset[table]['metadata']['name']
             schema = catalog_subset[table]['metadata']['schema']
             database = catalog_subset[table]['metadata']['database']

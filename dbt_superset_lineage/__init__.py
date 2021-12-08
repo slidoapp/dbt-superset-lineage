@@ -7,8 +7,8 @@ app = typer.Typer()
 @app.command()
 def pull_dashboards(dbt_project_dir: str = typer.Option('.', help=""),
                     exposures_path: str = typer.Option('/models/exposures/superset_dashboards.yml',
-                                                          help="If you change this, the path needs to be added"
-                                                               "to source-paths in dbt_project.yml."),
+                                                       help="If you change this, the path needs to be added"
+                                                            "to source-paths in dbt_project.yml."),
                     dbt_db_name: str = typer.Option(None, help=""),
                     superset_url: str = typer.Argument(..., help=""),
                     superset_db_id: int = typer.Option(None, help=""),
