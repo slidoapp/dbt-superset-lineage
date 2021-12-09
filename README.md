@@ -66,7 +66,9 @@ $ dbt docs generate # Generate dbt docs
 $ dbt docs serve # Serve dbt docs
 ```
 
--- TODO: add screenshot of exposure in dbt docs 
+<img src="https://github.com/slidoapp/dbt-superset-lineage/raw/main/assets/exposures_1.png" alt="Separate exposure in dbt docs"/>
+
+<img src="https://github.com/slidoapp/dbt-superset-lineage/raw/main/assets/exposures_2.png" alt="Referenced exposure in dbt docs"/>
 
 ### Push descriptions
 Push column descriptions from your dbt docs to Superset as plain text so that they could be viewed
@@ -84,7 +86,7 @@ $ dbt compile  # Compile project to create manifest.json
 $ dbt-superset-lineage push-descriptions https://mysuperset.mycompany.com  # Push descrptions from dbt docs to Superset
 ```
 
--- TODO: add screenshot of description in Superset
+<img src="https://github.com/slidoapp/dbt-superset-lineage/raw/main/assets/descriptions.png" alt="Column descriptions in Superset"/>
 
 ## License
 
