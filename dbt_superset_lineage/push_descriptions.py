@@ -53,6 +53,8 @@ def get_datasets_from_superset(superset, superset_db_id):
         else:
             break
 
+    assert datasets, "There are no datasets in Superset!"
+
     return datasets
 
 
