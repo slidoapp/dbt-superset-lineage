@@ -43,11 +43,12 @@ It includes a wrapper for [Superset API](https://superset.apache.org/docs/rest-a
 as environment variable or through `--superset-access-token`/`superset-refresh-token` option.
 
 **N.B.**
+- Make sure to run `dbt compile` (or `dbt run`) against the production profile, not your development profile  
+- In case more databases are used within dbt and/or Superset and there are duplicate names (`schema + table`) across
+  them, specify the database through `--dbt-db-name` and/or `--superset-db-id` options
+- Currently, `PUT` requests are only supported if CSRF tokens are disabled in Superset (`WTF_CSRF_ENABLED=False`).
 - Tested on dbt v0.20.0 and Apache Superset v1.3.0. Other versions, esp. those newer of Superset, might face errors due
   to different underlying code and API.
-- Currently, `PUT` requests are only supported if CSRF tokens are disabled in Superset (`WTF_CSRF_ENABLED=False`).
-- In case more databases are used within dbt and/or Superset and there are duplicate names (`schema + table`) across
-  them, specify the database through `--dbt-db-name` and/or `--superset-db-id` options.
 
 ### Pull dashboards
 Pull dashboards from Superset and add them as
