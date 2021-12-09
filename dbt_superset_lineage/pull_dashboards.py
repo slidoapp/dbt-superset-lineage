@@ -97,6 +97,9 @@ def get_dashboards_from_superset(superset, superset_url, superset_db_id):
             page_number += 1
         else:
             break
+
+    assert dashboards_id, "There are no dashboards in Superset!"
+
     logging.info("There are %d published dashboards in Superset.", len(dashboards_id))
 
     dashboards = []
@@ -113,6 +116,7 @@ def get_dashboards_from_superset(superset, superset_url, superset_db_id):
 
         # take unique dataset names, formatted as "[database].[schema].[table]" by Superset
         datasets_raw = list(set(result['table_names'].split(', ')))
+
         # parse dataset names into parts
         datasets_parsed = [dataset[1:-1].split('].[', maxsplit=2) for dataset in datasets_raw]
         datasets_parsed = [[dataset[0], 'None', dataset[1]]  # add None in the middle
