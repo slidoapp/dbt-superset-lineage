@@ -22,7 +22,9 @@ def pull_dashboards(dbt_project_dir: str = typer.Option('.', help="Directory pat
                                                                  "https://docs.sqlfluff.com/en/stable/dialects.html?"
                                                                  "highlight=ansi#dialects-reference"),
                     superset_access_token: str = typer.Option(None, envvar="SUPERSET_ACCESS_TOKEN",
-                                                              help="Access token to Superset API."),
+                                                              help="Access token to Superset API. "
+                                                                   "Can be automatically generated if "
+                                                                   "SUPERSET_REFRESH_TOKEN is provided."),
                     superset_refresh_token: str = typer.Option(None, envvar="SUPERSET_REFRESH_TOKEN",
                                                                help="Refresh token to Superset API.")):
 
@@ -43,7 +45,9 @@ def push_descriptions(dbt_project_dir: str = typer.Option('.', help="Directory p
                                                                                 "refreshed from database during "
                                                                                 "the push."),
                       superset_access_token: str = typer.Option(None, envvar="SUPERSET_ACCESS_TOKEN",
-                                                                help="Access token to Superset API."),
+                                                                help="Access token to Superset API."
+                                                                     "Can be automatically generated if "
+                                                                     "SUPERSET_REFRESH_TOKEN is provided."),
                       superset_refresh_token: str = typer.Option(None, envvar="SUPERSET_REFRESH_TOKEN",
                                                                  help="Refresh token to Superset API.")):
 
