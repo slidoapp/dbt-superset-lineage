@@ -12,11 +12,11 @@ def pull_dashboards(dbt_project_dir: str = typer.Option('.', help="Directory pat
                                                             "be stored. If you set this to go outside /models, it then"
                                                             "needs to be added to source-paths in dbt_project.yml."),
                     dbt_db_name: str = typer.Option(None, help="Name of your database within dbt towards which "
-                                                               "the pull could be reduced to run."),
+                                                               "the pull should be reduced to run."),
                     superset_url: str = typer.Argument(..., help="URL of your Superset, e.g. "
                                                                  "https://mysuperset.mycompany.com"),
                     superset_db_id: int = typer.Option(None, help="ID of your database within Superset towards which "
-                                                                  "the pull could be reduced to run."),
+                                                                  "the pull should be reduced to run."),
                     sql_dialect: str = typer.Option('ansi', help="Database SQL dialect; used for parsing queries. "
                                                                  "Consult docs of SQLFluff for details: "
                                                                  "https://docs.sqlfluff.com/en/stable/dialects.html?"
@@ -34,13 +34,13 @@ def pull_dashboards(dbt_project_dir: str = typer.Option('.', help="Directory pat
 @app.command()
 def push_descriptions(dbt_project_dir: str = typer.Option('.', help="Directory path to dbt project."),
                       dbt_db_name: str = typer.Option(None, help="Name of your database within dbt to which the script "
-                                                                 "could be reduced to run."),
+                                                                 "should be reduced to run."),
                       superset_url: str = typer.Argument(..., help="URL of your Superset, e.g. "
                                                                    "https://mysuperset.mycompany.com"),
                       superset_db_id: int = typer.Option(None, help="ID of your database within Superset towards which "
-                                                                    "the push could be reduced to run."),
+                                                                    "the push should be reduced to run."),
                       superset_refresh_columns: bool = typer.Option(False, help="Whether columns in Superset should be "
-                                                                                "refreshed from database during "
+                                                                                "refreshed from database before "
                                                                                 "the push."),
                       superset_access_token: str = typer.Option(None, envvar="SUPERSET_ACCESS_TOKEN",
                                                                 help="Access token to Superset API."),
