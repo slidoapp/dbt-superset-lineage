@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "dbt-superset-lineage"
 version = "0.2.1"
-description = "A package for extracting dashboards from Apache Superset to dbt docs as exposures."
+description = "Make dbt docs and Apache Superset talk to one another"
 authors = ["Michal Kolacek <mkolacek@slido.com>"]
 readme = "README.md"
 repository = "https://github.com/slidoapp/dbt-superset-lineage"
