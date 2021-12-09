@@ -7,7 +7,7 @@
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/dbt-superset-lineage)
 ![PyPI - Format](https://img.shields.io/pypi/format/dbt-superset-lineage)
 
-<img src="https://github.com/slidoapp/dbt-superset-lineage/raw/main/assets/lineage_white.png" alt="dbt-superset-lineage"/>
+![dbt-superset-lineage](assets/lineage_white.png)
 
 _Make [dbt](https://github.com/dbt-labs/dbt) docs and [Apache Superset](https://github.com/apache/superset) talk to one another_
 
@@ -60,6 +60,7 @@ references to dbt sources and models, making them visible both separately and as
 ```console
 $ cd jaffle_shop
 $ dbt compile  # Compile project to create manifest.json
+$ export SUPERSET_ACCESS_TOKEN=<TOKEN>
 $ dbt-superset-lineage pull-dashboards https://mysuperset.mycompany.com  # Pull dashboards from Superset to /models/exposures/superset_dashboards.yml
 $ dbt docs generate # Generate dbt docs
 $ dbt docs serve # Serve dbt docs
@@ -82,6 +83,7 @@ in Superset when creating charts.
 ```console
 $ cd jaffle_shop
 $ dbt compile  # Compile project to create manifest.json
+$ export SUPERSET_ACCESS_TOKEN=<TOKEN>
 $ dbt-superset-lineage push-descriptions https://mysuperset.mycompany.com  # Push descrptions from dbt docs to Superset
 ```
 ![Column descriptions in Superset](assets/descriptions.png)
