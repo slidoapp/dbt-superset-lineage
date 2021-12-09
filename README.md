@@ -62,6 +62,8 @@ references to dbt sources and models, making them visible both separately and as
 $ cd jaffle_shop
 $ dbt compile  # Compile project to create manifest.json
 $ dbt-superset-lineage pull-dashboards https://mysuperset.mycompany.com  # Pull dashboards from Superset to /models/exposures/superset_dashboards.yml
+$ dbt docs generate # Generate dbt docs
+$ dbt docs serve # Serve dbt docs
 ```
 
 -- TODO: add screenshot of exposure in dbt docs 
