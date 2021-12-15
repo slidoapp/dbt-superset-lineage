@@ -26,6 +26,13 @@ This will help you:
 - Avoid broken dashboards because of deprecated or changed models
 - Choosing the right attributes without navigating back and forth between chart and documentation
 
+## Demo
+The package was presented during [Coalesce](https://coalesce.getdbt.com/), the annual dbt conference, as a part of the talk
+[_From 100 spreadsheets to 100 data analysts: the story of dbt at Slido_](https://www.getdbt.com/coalesce-2021/from-spreadsheets-to-data-analysts-the-story-of-dbt-at-slido/).
+Watch a demo in the video below.
+
+[![Demo video](assets/demo.png)](https://youtu.be/YA0yqYSs9BQ?t=1240)
+
 ## Installation
 
 ```
