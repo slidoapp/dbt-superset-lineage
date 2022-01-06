@@ -50,7 +50,7 @@ as environment variable or through `--superset-access-token`/`superset-refresh-t
 **N.B.**
 - Make sure to run `dbt compile` (or `dbt run`) against the production profile, not your development profile  
 - In case more databases are used within dbt and/or Superset and there are duplicate names (`schema + table`) across
-  them, specify the database through `--dbt-db-name` and/or `--superset-db-id` options
+  them, specify the database through `--dbt-db-name` and/or `--superset-db-id` options and/or `--superset-db-name` and/or ``--superset-schema-name``
 - Currently, `PUT` requests are only supported if CSRF tokens are disabled in Superset (`WTF_CSRF_ENABLED=False`).
 - Tested on dbt v0.20.0 and Apache Superset v1.3.0. Other versions, esp. those newer of Superset, might face errors due
   to different underlying code and API.
@@ -62,6 +62,8 @@ references to dbt sources and models, making them visible both separately and as
 
 **N.B.**
 - Only published dashboards are extracted.
+- Alternatively, setting `--superset-dashboard-name` will pull the dashboard of this name, published or unpublished. 
+- Multiple can be set as `--superset-dashboard-name 'Name One' --superset-dashboard-name 'Name 2'`
 
 ```console
 $ cd jaffle_shop
@@ -84,6 +86,7 @@ in Superset when creating charts.
 - Run carefully as this rewrites your datasets using merged column metadata from Superset and dbt docs.
 - Descriptions are rendered as plain text, hence no markdown syntax, incl. links, will be displayed.
 - Avoid special characters and strings in your dbt docs, e.g. `→` or `<null>`.
+- You can set the superset database by id or name, as well as the specific schema with `--superset-db-id` and/or `--superset-db-name` and/or ``--superset-schema-name``
 
 
 ```console
