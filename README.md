@@ -86,7 +86,7 @@ in Superset when creating charts.
 - Run carefully as this rewrites your datasets using merged column metadata from Superset and dbt docs.
 - Descriptions are rendered as plain text, hence no markdown syntax, incl. links, will be displayed.
 - Avoid special characters and strings in your dbt docs, e.g. `→` or `<null>`.
-- You can set the superset database by id or name, as well as the specific schema with `--superset-db-id` and/or `--superset-db-name` and/or ``--superset-schema-name``
+- You can set the superset database by id or name, as well as the specific schema with `--superset-db-id` and/or `--superset-db-name` and/or `--superset-schema-name`
 
 
 ```console
