@@ -1,4 +1,5 @@
 import typer
+from typing import List
 from .pull_dashboards import main as pull_dashboards_main
 from .push_descriptions import main as push_descriptions_main
 
@@ -26,11 +27,15 @@ def pull_dashboards(dbt_project_dir: str = typer.Option('.', help="Directory pat
                                                                    "Can be automatically generated if "
                                                                    "SUPERSET_REFRESH_TOKEN is provided."),
                     superset_refresh_token: str = typer.Option(None, envvar="SUPERSET_REFRESH_TOKEN",
-                                                               help="Refresh token to Superset API.")):
+                                                               help="Refresh token to Superset API."),
+                    superset_dashboard_name:List[str] = typer.Option(None,help="List dashboards you want import by Name."
+                                                                      "Each Dashboard should be a separate param."
+                                                                      "ex. --superset-dashboard-name 'Name One' --superset-dashboard-name 'Name 2'")):
 
     pull_dashboards_main(dbt_project_dir, exposures_path, dbt_db_name,
                          superset_url, superset_db_id, sql_dialect,
-                         superset_access_token, superset_refresh_token)
+                         superset_access_token, superset_refresh_token,
+                         superset_dashboard_name)
 
 
 @app.command()
@@ -49,11 +54,16 @@ def push_descriptions(dbt_project_dir: str = typer.Option('.', help="Directory p
                                                                      "Can be automatically generated if "
                                                                      "SUPERSET_REFRESH_TOKEN is provided."),
                       superset_refresh_token: str = typer.Option(None, envvar="SUPERSET_REFRESH_TOKEN",
-                                                                 help="Refresh token to Superset API.")):
+                                                                 help="Refresh token to Superset API."),
+                      superset_db_name: str = typer.Option(None, help="Name of your database within Superset towards which "
+                                                                                "the push should be reduced to run."),
+                      superset_schema_name: str = typer.Option(None, help="Name of your database schema within Superset towards which "
+                                                                                "the push should be reduced to run.")):
 
     push_descriptions_main(dbt_project_dir, dbt_db_name,
                            superset_url, superset_db_id, superset_refresh_columns,
-                           superset_access_token, superset_refresh_token)
+                           superset_access_token, superset_refresh_token,
+                           superset_db_name,superset_schema_name)
 
 
 if __name__ == '__main__':

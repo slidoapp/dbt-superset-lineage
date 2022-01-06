@@ -82,18 +82,32 @@ def get_tables_from_dbt(dbt_manifest, dbt_db_name):
     return tables
 
 
-def get_dashboards_from_superset(superset, superset_url, superset_db_id):
+def get_dashboards_from_superset(superset, superset_url, superset_db_id, superset_dashboard_names):
     logging.info("Getting published dashboards from Superset.")
     page_number = 0
     dashboards_id = []
+
+    #Enable user to grab dashboards by name, otherwise, grab published
+    grab_published=True
+
+    if superset_dashboard_names:
+        grab_published=False
+    
     while True:
         logging.info("Getting page %d.", page_number + 1)
         res = superset.request('GET', f'/dashboard/?q={{"page":{page_number},"page_size":100}}')
         result = res['result']
         if result:
             for r in result:
-                if r['published']:
-                    dashboards_id.append(r['id'])
+                #Grab published if flag True
+                if grab_published:
+                    if r['published']:
+                        dashboards_id.append(r['id'])
+
+                #grab by name if flag is False
+                else:
+                    if r['dashboard_title'] in superset_dashboard_names:
+                        dashboards_id.append(r['id'])
             page_number += 1
         else:
             break
@@ -252,7 +266,7 @@ class YamlFormatted(ruamel.yaml.YAML):
 
 def main(dbt_project_dir, exposures_path, dbt_db_name,
          superset_url, superset_db_id, sql_dialect,
-         superset_access_token, superset_refresh_token):
+         superset_access_token, superset_refresh_token, superset_dashboard_name):
 
     # require at least one token for Superset
     assert superset_access_token is not None or superset_refresh_token is not None, \
@@ -282,7 +296,8 @@ def main(dbt_project_dir, exposures_path, dbt_db_name,
     dbt_tables = get_tables_from_dbt(dbt_manifest, dbt_db_name)
     dashboards, dashboards_datasets = get_dashboards_from_superset(superset,
                                                                    superset_url,
-                                                                   superset_db_id)
+                                                                   superset_db_id,
+                                                                   superset_dashboard_name)
     datasets = get_datasets_from_superset(superset,
                                           dashboards_datasets,
                                           dbt_tables,

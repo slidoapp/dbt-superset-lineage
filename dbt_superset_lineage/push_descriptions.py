@@ -11,7 +11,7 @@ from .superset_api import Superset
 logging.basicConfig(level=logging.INFO)
 
 
-def get_datasets_from_superset(superset, superset_db_id):
+def get_datasets_from_superset(superset, superset_db_id, superset_db_name, superset_schema_name):
     logging.info("Getting physical datasets from Superset.")
 
     page_number = 0
@@ -25,16 +25,24 @@ def get_datasets_from_superset(superset, superset_db_id):
             for r in result:
                 kind = r['kind']
                 database_id = r['database']['id']
+                database_name = r['database']['database_name']
 
                 if kind == 'physical' \
-                        and (superset_db_id is None or database_id == superset_db_id):
+                        and (superset_db_id is None or database_id == superset_db_id or database_name==superset_db_name):
 
                     dataset_id = r['id']
-
+                    
                     name = r['table_name']
                     schema = r['schema']
                     dataset_key = f'{schema}.{name}'  # used as unique identifier
 
+                    #check schema if provided and make sure dataset alines
+                    if superset_schema_name==None:
+                        pass
+                    elif superset_schema_name!=schema :
+                        logging.info(superset_schema_name)
+                        continue
+                    
                     dataset_dict = {
                         'id': dataset_id,
                         'key': dataset_key
@@ -173,7 +181,8 @@ def put_columns_to_superset(superset, dataset):
 
 def main(dbt_project_dir, dbt_db_name,
          superset_url, superset_db_id, superset_refresh_columns,
-         superset_access_token, superset_refresh_token):
+         superset_access_token, superset_refresh_token,
+         superset_db_name, superset_schema_name):
 
     # require at least one token for Superset
     assert superset_access_token is not None or superset_refresh_token is not None, \
@@ -186,7 +195,7 @@ def main(dbt_project_dir, dbt_db_name,
 
     logging.info("Starting the script!")
 
-    sst_datasets = get_datasets_from_superset(superset, superset_db_id)
+    sst_datasets = get_datasets_from_superset(superset, superset_db_id,superset_db_name, superset_schema_name)
     logging.info("There are %d physical datasets in Superset.", len(sst_datasets))
 
     with open(f'{dbt_project_dir}/target/manifest.json') as f:
