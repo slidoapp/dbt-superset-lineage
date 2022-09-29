@@ -84,10 +84,6 @@ def get_tables_from_dbt(dbt_manifest, dbt_db_name):
 
     assert tables, "Manifest is empty!"
 
-    # DEBUG
-    with open('/Users/philippleufke/Downloads/dbt_superset_debug__dbt_tables.json', 'w') as fp:
-        json.dump(tables, fp, sort_keys=True, indent=4)
-
     return tables
 
 
@@ -143,63 +139,23 @@ def merge_columns_info(dataset, tables):
     for sst_column in sst_columns:
 
         # add the mandatory field
-        column_name = sst_column['column_name']
-        column_new = {'column_name': column_name}
-
+        column_new = {'column_name': sst_column['column_name']}
 
         # add optional fields only if not already None, otherwise it would error out
-        # Note: `type_generic` is not yet exposed in PUT but returned in GET dataset
-        for field in ['advanced_data_type', 'description', 'expression', 'extra', 'filterable', 'groupby', 'python_date_format',
+        for field in ['expression', 'filterable', 'groupby', 'python_date_format',
                       'verbose_name', 'type', 'is_dttm', 'is_active']:
             if sst_column[field] is not None:
                 column_new[field] = sst_column[field]
 
         # add description
-        if column_name in dbt_columns \
-                and 'description' in dbt_columns[column_name] \
+        if sst_column['column_name'] in dbt_columns \
+                and 'description' in dbt_columns[sst_column['column_name']] \
                 and sst_column['expression'] == '':  # database columns
-            description = dbt_columns[column_name]['description']
+            description = dbt_columns[sst_column['column_name']]['description']
             description = convert_markdown_to_plain_text(description)
         else:
             description = sst_column['description']
         column_new['description'] = description
-
-        
-       
-
-
- 
-        # FIXME: The meta fields are called differently in Superset and thus need to be renamed.
-        # For this reason this code is not DRZ for now...
-
-        # add verbose_name which is in the `meta` dict in dbt
-        if column_name in dbt_columns \
-                and 'verbose_name' in dbt_columns[column_name]['meta'] \
-                and sst_column['expression'] == '':  # database columns
-            verbose_name = dbt_columns[column_name]['meta']['verbose_name']
-        else:
-            verbose_name = sst_column['verbose_name']
-        column_new['verbose_name'] = verbose_name
-
-        # add is_filterable which is in the `meta` dict in dbt
-        if column_name in dbt_columns \
-                and 'is_filterable' in dbt_columns[column_name]['meta'] \
-                and sst_column['expression'] == '':  # database columns
-            is_filterable = dbt_columns[column_name]['meta']['is_filterable']
-        else:
-            is_filterable = sst_column['filterable']
-        column_new['filterable'] = is_filterable
-
-        # add is_groupable which is in the `meta` dict in dbt
-        if column_name in dbt_columns \
-                and 'is_groupable' in dbt_columns[column_name]['meta'] \
-                and sst_column['expression'] == '':  # database columns
-            is_groupable = dbt_columns[column_name]['meta']['is_groupable']
-        else:
-            is_groupable = sst_column['groupby']
-        column_new['groupby'] = is_groupable
-
-
 
         columns_new.append(column_new)
 
@@ -211,18 +167,7 @@ def merge_columns_info(dataset, tables):
 def put_columns_to_superset(superset, dataset):
     logging.info("Putting new columns info with descriptions back into Superset.")
 
-    # DEBUG
-    with open('/Users/philippleufke/Downloads/dbt_superset_debug__dataset.json', 'w') as fp:
-        json.dump(dataset, fp, sort_keys=True, indent=4)
-
-
-
     body = {'columns': dataset['columns_new']}
-
-    # DEBUG
-    with open('/Users/philippleufke/Downloads/dbt_superset_debug__body.json', 'w') as fp:
-        json.dump(body, fp, sort_keys=True, indent=4)
-
     superset.request('PUT', f"/dataset/{dataset['id']}?override_columns=true", json=body)
 
 
