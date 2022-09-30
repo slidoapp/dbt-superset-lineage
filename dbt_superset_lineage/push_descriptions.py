@@ -68,6 +68,8 @@ def get_tables_from_dbt(dbt_manifest, dbt_db_name):
             name = table['name']
             schema = table['schema']
             database = table['database']
+            meta = table['meta']
+            description = table['description']
 
             table_key_short = schema + '.' + name
             columns = table['columns']
@@ -80,7 +82,7 @@ def get_tables_from_dbt(dbt_manifest, dbt_db_name):
                     "This would result in incorrect matching between Superset and dbt. " \
                     "To fix this, remove duplicates or add the ``dbt_db_name`` argument."
 
-                tables[table_key_short] = {'columns': columns}
+                tables[table_key_short] = {'columns': columns, 'meta': meta, 'description': description}
 
     assert tables, "Manifest is empty!"
 
@@ -100,7 +102,10 @@ def add_superset_columns(superset, dataset):
     logging.info("Pulling fresh columns info from Superset.")
     res = superset.request('GET', f"/dataset/{dataset['id']}")
     columns = res['result']['columns']
+    meta = res['result']
+    del meta['columns']
     dataset['columns'] = columns
+    dataset['meta'] = meta
     return dataset
 
 
@@ -136,6 +141,41 @@ def merge_columns_info(dataset, tables):
     logging.info("Merging columns info from Superset and manifest.json file.")
 
     key = dataset['key']
+
+    meta_sst = dataset['meta']
+    
+    # add the whole dbt meta object of the table/model to the dict for debugging purpose
+    meta_dbt = tables.get(key, {}).get('meta', {})
+    dataset['meta_dbt'] = meta_dbt
+
+    # Add meta information of the dataset.
+    meta_new = {}
+    # FIXME: The name of this and related functions is not correctly scoped any longer,
+    # as we don't only process columns but also the metadata...
+
+    # Prepopulate the dataset's meta data in case that the dataset is NOT set
+    # to be managed externally (i.e., by dbt).
+    # The dbt meta data field `prohibit_manual_editing` decides whether the dataset
+    # is externally managed, NOT Superset's metadata!
+    meta_new['is_managed_externally'] = meta_dbt.get('bi_integration', {}).get('prohibit_manual_editing', False)
+    if not meta_new['is_managed_externally']:
+        for field in ['cache_timeout', 'description', 'fetch_values_predicate', 'filter_select_enabled', 'is_managed_externally', 'main_dttm_col']:
+            if meta_sst[field] is not None:
+                meta_new[field] = meta_sst[field]
+
+    dbt_description = tables.get(key, {}).get('description')
+    if dbt_description is not None:
+        meta_new['description'] = convert_markdown_to_plain_text(dbt_description)
+
+    # Not sure if we need to suppress None values here?!
+    meta_new['cache_timeout'] = meta_dbt.get('bi_integration', {}).get('results_cache_timeout_seconds')
+    meta_new['fetch_values_predicate'] = meta_dbt.get('bi_integration', {}).get('filter_value_extraction', {}).get('where')
+    meta_new['filter_select_enabled'] = meta_dbt.get('bi_integration', {}).get('filter_value_extraction', {}).get('enable')
+    meta_new['main_dttm_col'] = meta_dbt.get('bi_integration', {}).get('main_timestamp_column')
+        
+    dataset['meta_new'] = meta_new
+
+    # Columns:
     sst_columns = dataset['columns']
     dbt_columns = tables.get(key, {}).get('columns', {})
 
@@ -169,7 +209,7 @@ def merge_columns_info(dataset, tables):
 
 
  
-        # FIXME: The meta fields are called differently in Superset and thus need to be renamed.
+        # FIXME: The column meta fields are called differently in Superset and thus need to be renamed.
         # For this reason this code is not DRY for now...
 
         # add verbose_name which is in the `meta` dict in dbt
@@ -185,7 +225,7 @@ def merge_columns_info(dataset, tables):
         if column_name in dbt_columns \
                 and 'is_filterable' in dbt_columns[column_name]['meta'].get('bi_integration', {}) \
                 and sst_column['expression'] == '':  # database columns
-            is_filterable = dbt_columns[column_name]['meta']['is_filterable']
+            is_filterable = dbt_columns[column_name]['meta']['bi_integration']['is_filterable']
         else:
             is_filterable = sst_column['filterable']
         column_new['filterable'] = is_filterable
@@ -194,7 +234,7 @@ def merge_columns_info(dataset, tables):
         if column_name in dbt_columns \
                 and 'is_groupable' in dbt_columns[column_name]['meta'].get('bi_integration', {}) \
                 and sst_column['expression'] == '':  # database columns
-            is_groupable = dbt_columns[column_name]['meta']['is_groupable']
+            is_groupable = dbt_columns[column_name]['meta']['bi_integration']['is_groupable']
         else:
             is_groupable = sst_column['groupby']
         column_new['groupby'] = is_groupable
@@ -216,8 +256,8 @@ def put_columns_to_superset(superset, dataset):
         json.dump(dataset, fp, sort_keys=True, indent=4)
 
 
-
-    body = {'columns': dataset['columns_new']}
+    body = dataset['meta_new']
+    body['columns'] = dataset['columns_new']
 
     # DEBUG
     with open('/Users/philippleufke/tmp/dbt_superset_debug/body.json', 'w') as fp:
@@ -248,6 +288,20 @@ def main(dbt_project_dir, dbt_db_name,
         dbt_manifest = json.load(f)
 
     dbt_tables = get_tables_from_dbt(dbt_manifest, dbt_db_name)
+
+    # FIXME: Add auto-registration here:
+    # Which tables are set to be auto-registered in dbt?
+    # Which of them are not yet there?
+    # Register them
+    # Re-fetch Superset datasets
+    # Test global per-folder settings in dbt!
+    # {
+    #     "database": 2,
+    #     "external_url": null,
+    #     "is_managed_externally": true,
+    #     "schema": "data_warehouse_external_saas",
+    #     "table_name": "external_events"
+    # }
 
     for i, sst_dataset in enumerate(sst_datasets):
         logging.info("Processing dataset %d/%d.", i + 1, len(sst_datasets))
