@@ -85,7 +85,7 @@ def get_tables_from_dbt(dbt_manifest, dbt_db_name):
     assert tables, "Manifest is empty!"
 
     # DEBUG
-    with open('/Users/philippleufke/Downloads/dbt_superset_debug__dbt_tables.json', 'w') as fp:
+    with open('/Users/philippleufke/tmp/dbt_superset_debug/dbt_tables.json', 'w') as fp:
         json.dump(tables, fp, sort_keys=True, indent=4)
 
     return tables
@@ -212,7 +212,7 @@ def put_columns_to_superset(superset, dataset):
     logging.info("Putting new columns info with descriptions back into Superset.")
 
     # DEBUG
-    with open('/Users/philippleufke/Downloads/dbt_superset_debug__dataset.json', 'w') as fp:
+    with open('/Users/philippleufke/tmp/dbt_superset_debug/dataset.json', 'w') as fp:
         json.dump(dataset, fp, sort_keys=True, indent=4)
 
 
@@ -220,7 +220,7 @@ def put_columns_to_superset(superset, dataset):
     body = {'columns': dataset['columns_new']}
 
     # DEBUG
-    with open('/Users/philippleufke/Downloads/dbt_superset_debug__body.json', 'w') as fp:
+    with open('/Users/philippleufke/tmp/dbt_superset_debug/body.json', 'w') as fp:
         json.dump(body, fp, sort_keys=True, indent=4)
 
     superset.request('PUT', f"/dataset/{dataset['id']}?override_columns=true", json=body)
