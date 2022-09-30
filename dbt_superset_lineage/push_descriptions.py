@@ -170,7 +170,7 @@ def merge_columns_info(dataset, tables):
 
  
         # FIXME: The meta fields are called differently in Superset and thus need to be renamed.
-        # For this reason this code is not DRZ for now...
+        # For this reason this code is not DRY for now...
 
         # add verbose_name which is in the `meta` dict in dbt
         if column_name in dbt_columns \
@@ -181,18 +181,18 @@ def merge_columns_info(dataset, tables):
             verbose_name = sst_column['verbose_name']
         column_new['verbose_name'] = verbose_name
 
-        # add is_filterable which is in the `meta` dict in dbt
+        # add is_filterable which is in the `meta` dict in the 'bi_integration' section
         if column_name in dbt_columns \
-                and 'is_filterable' in dbt_columns[column_name]['meta'] \
+                and 'is_filterable' in dbt_columns[column_name]['meta'].get('bi_integration', {}) \
                 and sst_column['expression'] == '':  # database columns
             is_filterable = dbt_columns[column_name]['meta']['is_filterable']
         else:
             is_filterable = sst_column['filterable']
         column_new['filterable'] = is_filterable
 
-        # add is_groupable which is in the `meta` dict in dbt
+        # add is_groupable which is in the `meta` dict in the 'bi_integration' section
         if column_name in dbt_columns \
-                and 'is_groupable' in dbt_columns[column_name]['meta'] \
+                and 'is_groupable' in dbt_columns[column_name]['meta'].get('bi_integration', {}) \
                 and sst_column['expression'] == '':  # database columns
             is_groupable = dbt_columns[column_name]['meta']['is_groupable']
         else:
