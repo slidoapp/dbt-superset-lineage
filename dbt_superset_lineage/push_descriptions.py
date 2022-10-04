@@ -249,7 +249,7 @@ def merge_columns_info(dataset, tables):
                 is_filterable = dbt_columns[column_name]['meta']['bi_integration']['is_filterable']
                 column_new['filterable'] = is_filterable
                 # DEBUG
-                logging.info("Column %s is filterable?: %s", column_name, is_filterable)
+                # logging.info("Column %s is filterable?: %s", column_name, is_filterable)
 
             # add is_groupable which is in the `meta` dict in the 'bi_integration' section
             if column_name in dbt_columns \
@@ -257,7 +257,7 @@ def merge_columns_info(dataset, tables):
                 is_groupable = dbt_columns[column_name]['meta']['bi_integration']['is_groupable']
                 column_new['groupby'] = is_groupable
                 # DEBUG
-                logging.info("Column %s is groupable?: %s", column_name, is_groupable)
+                # logging.info("Column %s is groupable?: %s", column_name, is_groupable)
 
 
 
@@ -269,13 +269,6 @@ def merge_columns_info(dataset, tables):
 
 
 def register_dataset_in_superset(superset, superset_db_id, table):
-    # {
-    #     "database": 2,
-    #     "external_url": null,
-    #     "is_managed_externally": true,
-    #     "schema": "data_warehouse_external_saas",
-    #     "table_name": "external_events"
-    # }
     logging.info("Registering database table in Superset: %s", table)
 
     schema_name, table_name = table.split('.')
@@ -336,14 +329,13 @@ def main(dbt_project_dir, dbt_db_name,
 
     dbt_tables = get_tables_from_dbt(dbt_manifest, dbt_db_name)
 
-    # FIXME: Add auto-registration here:
-    # Which tables are set to be auto-registered in dbt?
-    # Which of them are not yet there?
+    # Auto-registration of dbt models in Superset:
+    # Which tables are set to be auto-registered in dbt and are not yet present in Superset?:
     auto_register_tables = get_auto_register_tables(sst_datasets, dbt_tables)
 
     # DEBUG
-    with open('/Users/philippleufke/tmp/dbt_superset_debug/auto_register_tables.json', 'w') as fp:
-        json.dump(auto_register_tables, fp, sort_keys=True, indent=4)
+    # with open('/Users/philippleufke/tmp/dbt_superset_debug/auto_register_tables.json', 'w') as fp:
+    #     json.dump(auto_register_tables, fp, sort_keys=True, indent=4)
 
     # Register them
     for table in auto_register_tables:
@@ -353,14 +345,9 @@ def main(dbt_project_dir, dbt_db_name,
             logging.error("The database table %s could not be registeres. Check the error below.",
                           table, exc_info=e)
 
-
     # Re-fetch Superset datasets
     sst_datasets = get_datasets_from_superset(superset, superset_db_id)
     logging.info("There are %d physical datasets in Superset.", len(sst_datasets))
-
-
-    # Test global per-folder settings in dbt!
-
 
     for i, sst_dataset in enumerate(sst_datasets):
         logging.info("Processing dataset %d/%d.", i + 1, len(sst_datasets))
