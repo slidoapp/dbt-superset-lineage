@@ -52,8 +52,9 @@ def get_datasets_from_superset(superset, superset_db_id):
             page_number += 1
         else:
             break
-
-    assert datasets, "There are no datasets in Superset!"
+    
+    # Not asserting that there are any datasets, as for the first run it may very well be that there is none yet!
+    #assert datasets, "There are no datasets in Superset!"
 
     return datasets
 
@@ -93,13 +94,25 @@ def get_tables_from_dbt(dbt_manifest, dbt_db_name):
     return tables
 
 
+def get_auto_register_tables(sst_datasets, dbt_tables):    
+    dbt_auto_register_tables = []
+    for table, props in dbt_tables.items():
+        if props.get('meta').get('bi_integration', {}).get('auto_register', False):
+            dbt_auto_register_tables.append(table)
+    existing_datasets = [sst_dataset['key'] for sst_dataset in sst_datasets]
+    auto_register_tables = [table for table in dbt_auto_register_tables if table not in existing_datasets]
+
+    return auto_register_tables
+
+
+
 def refresh_columns_in_superset(superset, dataset_id):
     logging.info("Refreshing columns in Superset.")
     superset.request('PUT', f'/dataset/{dataset_id}/refresh')
 
 
 def add_superset_columns(superset, dataset):
-    logging.info("Pulling fresh columns info from Superset.")
+    logging.info("Pulling dataset columns info from Superset.")
     res = superset.request('GET', f"/dataset/{dataset['id']}")
     columns = res['result']['columns']
     meta = res['result']
@@ -179,6 +192,13 @@ def merge_columns_info(dataset, tables):
     sst_columns = dataset['columns']
     dbt_columns = tables.get(key, {}).get('columns', {})
 
+    # DEBUG
+    with open('/Users/philippleufke/tmp/dbt_superset_debug/sst_columns.json', 'w') as fp:
+        json.dump(sst_columns, fp, sort_keys=True, indent=4)
+    with open('/Users/philippleufke/tmp/dbt_superset_debug/dbt_columns.json', 'w') as fp:
+        json.dump(dbt_columns, fp, sort_keys=True, indent=4)
+
+
     columns_new = []
     for sst_column in sst_columns:
 
@@ -186,58 +206,58 @@ def merge_columns_info(dataset, tables):
         column_name = sst_column['column_name']
         column_new = {'column_name': column_name}
 
-
-        # add optional fields only if not already None, otherwise it would error out
-        # Note: `type_generic` is not yet exposed in PUT but returned in GET dataset
-        for field in ['advanced_data_type', 'description', 'expression', 'extra', 'filterable', 'groupby', 'python_date_format',
-                      'verbose_name', 'type', 'is_dttm', 'is_active']:
-            if sst_column[field] is not None:
-                column_new[field] = sst_column[field]
-
-        # add description
-        if column_name in dbt_columns \
-                and 'description' in dbt_columns[column_name] \
-                and sst_column['expression'] == '':  # database columns
-            description = dbt_columns[column_name]['description']
-            description = convert_markdown_to_plain_text(description)
-        else:
-            description = sst_column['description']
-        column_new['description'] = description
-
-        
-       
+        if not meta_new['is_managed_externally']:
+            # Pre-populate the columns information with the one that already exists in Superset,
+            # but only if the dataset is not managed _exclusively_ via dbt.
+            # In the latter case we overwrite the columns information of the columns that 
+            # are not calculated columns.
 
 
- 
-        # FIXME: The column meta fields are called differently in Superset and thus need to be renamed.
-        # For this reason this code is not DRY for now...
+            # add optional fields only if not already None, otherwise it would error out
+            # Note: `type_generic` is not yet exposed in PUT but returned in GET dataset
+            for field in ['advanced_data_type', 'description', 'expression', 'extra', 'filterable', 'groupby', 'python_date_format',
+                        'verbose_name', 'type', 'is_dttm', 'is_active']:
+                if sst_column[field] is not None:
+                    column_new[field] = sst_column[field]
 
-        # add verbose_name which is in the `meta` dict in dbt
-        if column_name in dbt_columns \
-                and 'verbose_name' in dbt_columns[column_name]['meta'] \
-                and sst_column['expression'] == '':  # database columns
-            verbose_name = dbt_columns[column_name]['meta']['verbose_name']
-        else:
-            verbose_name = sst_column['verbose_name']
-        column_new['verbose_name'] = verbose_name
+        # Overwrite if the column is not a calculated column:
+        # Note: after initial registration the "expression" field is null and not an empty string!
+        if sst_column['expression'] == '' or sst_column['expression'] is None:
+            # add description
+            if column_name in dbt_columns \
+                    and 'description' in dbt_columns[column_name]:
+                description = dbt_columns[column_name]['description']
+                description = convert_markdown_to_plain_text(description)
+            else:
+                description = sst_column['description']
+            column_new['description'] = description
 
-        # add is_filterable which is in the `meta` dict in the 'bi_integration' section
-        if column_name in dbt_columns \
-                and 'is_filterable' in dbt_columns[column_name]['meta'].get('bi_integration', {}) \
-                and sst_column['expression'] == '':  # database columns
-            is_filterable = dbt_columns[column_name]['meta']['bi_integration']['is_filterable']
-        else:
-            is_filterable = sst_column['filterable']
-        column_new['filterable'] = is_filterable
+            
+            # Meta fields:
+            # The column meta fields are called differently in Superset and thus need to be renamed.
+            # For this reason this code is not DRY for now...
 
-        # add is_groupable which is in the `meta` dict in the 'bi_integration' section
-        if column_name in dbt_columns \
-                and 'is_groupable' in dbt_columns[column_name]['meta'].get('bi_integration', {}) \
-                and sst_column['expression'] == '':  # database columns
-            is_groupable = dbt_columns[column_name]['meta']['bi_integration']['is_groupable']
-        else:
-            is_groupable = sst_column['groupby']
-        column_new['groupby'] = is_groupable
+            # add verbose_name which is in the `meta` dict in dbt
+            if column_name in dbt_columns \
+                    and 'verbose_name' in dbt_columns[column_name]['meta']:
+                verbose_name = dbt_columns[column_name]['meta']['verbose_name']
+                column_new['verbose_name'] = verbose_name
+
+            # add is_filterable which is in the `meta` dict in the 'bi_integration' section
+            if column_name in dbt_columns \
+                    and 'is_filterable' in dbt_columns[column_name]['meta'].get('bi_integration', {}):
+                is_filterable = dbt_columns[column_name]['meta']['bi_integration']['is_filterable']
+                column_new['filterable'] = is_filterable
+                # DEBUG
+                logging.info("Column %s is filterable?: %s", column_name, is_filterable)
+
+            # add is_groupable which is in the `meta` dict in the 'bi_integration' section
+            if column_name in dbt_columns \
+                    and 'is_groupable' in dbt_columns[column_name]['meta'].get('bi_integration', {}):
+                is_groupable = dbt_columns[column_name]['meta']['bi_integration']['is_groupable']
+                column_new['groupby'] = is_groupable
+                # DEBUG
+                logging.info("Column %s is groupable?: %s", column_name, is_groupable)
 
 
 
@@ -246,6 +266,33 @@ def merge_columns_info(dataset, tables):
     dataset['columns_new'] = columns_new
 
     return dataset
+
+
+def register_dataset_in_superset(superset, superset_db_id, table):
+    # {
+    #     "database": 2,
+    #     "external_url": null,
+    #     "is_managed_externally": true,
+    #     "schema": "data_warehouse_external_saas",
+    #     "table_name": "external_events"
+    # }
+    logging.info("Registering database table in Superset: %s", table)
+
+    schema_name, table_name = table.split('.')
+
+    body = {
+        "database": superset_db_id,
+        "schema": schema_name,
+        "table_name": table_name
+    }
+
+    # DEBUG
+    with open('/Users/philippleufke/tmp/dbt_superset_debug/register_dataset_body.json', 'w') as fp:
+        json.dump(body, fp, sort_keys=True, indent=4)
+
+    superset.request('POST', f"/dataset/", json=body)
+
+
 
 
 def put_columns_to_superset(superset, dataset):
@@ -260,7 +307,7 @@ def put_columns_to_superset(superset, dataset):
     body['columns'] = dataset['columns_new']
 
     # DEBUG
-    with open('/Users/philippleufke/tmp/dbt_superset_debug/body.json', 'w') as fp:
+    with open('/Users/philippleufke/tmp/dbt_superset_debug/dataset_update_body.json', 'w') as fp:
         json.dump(body, fp, sort_keys=True, indent=4)
 
     superset.request('PUT', f"/dataset/{dataset['id']}?override_columns=true", json=body)
@@ -292,16 +339,28 @@ def main(dbt_project_dir, dbt_db_name,
     # FIXME: Add auto-registration here:
     # Which tables are set to be auto-registered in dbt?
     # Which of them are not yet there?
+    auto_register_tables = get_auto_register_tables(sst_datasets, dbt_tables)
+
+    # DEBUG
+    with open('/Users/philippleufke/tmp/dbt_superset_debug/auto_register_tables.json', 'w') as fp:
+        json.dump(auto_register_tables, fp, sort_keys=True, indent=4)
+
     # Register them
+    for table in auto_register_tables:
+        try:
+            register_dataset_in_superset(superset, superset_db_id,table)
+        except HTTPError as e:
+            logging.error("The database table %s could not be registeres. Check the error below.",
+                          table, exc_info=e)
+
+
     # Re-fetch Superset datasets
+    sst_datasets = get_datasets_from_superset(superset, superset_db_id)
+    logging.info("There are %d physical datasets in Superset.", len(sst_datasets))
+
+
     # Test global per-folder settings in dbt!
-    # {
-    #     "database": 2,
-    #     "external_url": null,
-    #     "is_managed_externally": true,
-    #     "schema": "data_warehouse_external_saas",
-    #     "table_name": "external_events"
-    # }
+
 
     for i, sst_dataset in enumerate(sst_datasets):
         logging.info("Processing dataset %d/%d.", i + 1, len(sst_datasets))
