@@ -242,9 +242,10 @@ def merge_columns_info(dataset, tables):
                     and 'verbose_name' in dbt_columns[column_name]['meta']:
                 verbose_name = dbt_columns[column_name]['meta']['verbose_name']
                 column_new['verbose_name'] = verbose_name
-            elif column_name in dbt_columns:
-                # Fall back to the column name in title case
+            elif column_new.get('verbose_name', '') == '':
+                # Fall back to Title Cased column_name if verbose_name is not manually set in Superset
                 column_new['verbose_name'] = column_name.replace('_', ' ').title()
+
 
             # add is_filterable which is in the `meta` dict in the 'bi_integration' section
             if column_name in dbt_columns \
