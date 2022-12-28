@@ -88,7 +88,15 @@ def get_dashboards_from_superset(superset, superset_url, superset_db_id):
     dashboards_id = []
     while True:
         logging.info("Getting page %d.", page_number + 1)
-        res = superset.request('GET', f'/dashboard/?q={{"page":{page_number},"page_size":100}}')
+
+        payload = {
+            'q': {
+                'page': page_number,
+                'page_size': 100
+            }
+        }
+        res = superset.request('GET', '/dashboard/', params=payload)
+
         result = res['result']
         if result:
             for r in result:
