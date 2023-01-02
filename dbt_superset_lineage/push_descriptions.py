@@ -318,8 +318,10 @@ def main(dbt_project_dir, dbt_db_name,
     # require at least one token for Superset or a username/password combination
     assert superset_access_token is not None or superset_refresh_token is not None or (superset_user is not None and superset_password is not None), \
            "Add ``SUPERSET_ACCESS_TOKEN`` or ``SUPERSET_REFRESH_TOKEN`` " \
+           "or ``SUPERSET_USER`` _and_ ``SUPERSET_PASSWORD`` " \
            "to your environment variables or provide in CLI " \
-           "via ``superset-access-token`` or ``superset-refresh-token``."
+           "via ``superset-access-token`` or ``superset-refresh-token`` " \
+           "or ``superset-user`` and ``superset-password``."
 
     superset = Superset(superset_url + '/api/v1',
                         access_token=superset_access_token, refresh_token=superset_refresh_token,
@@ -348,7 +350,7 @@ def main(dbt_project_dir, dbt_db_name,
         try:
             register_dataset_in_superset(superset, superset_db_id,table)
         except HTTPError as e:
-            logging.error("The database table %s could not be registeres. Check the error below.",
+            logging.error("The database table %s could not be registered. Check the error below.",
                           table, exc_info=e)
 
     # Re-fetch Superset datasets
@@ -356,17 +358,22 @@ def main(dbt_project_dir, dbt_db_name,
     logging.info("There are %d physical datasets in Superset.", len(sst_datasets))
 
     for i, sst_dataset in enumerate(sst_datasets):
-        logging.info("Processing dataset %d/%d.", i + 1, len(sst_datasets))
+
         sst_dataset_id = sst_dataset['id']
         sst_dataset_name = sst_dataset['key']
-        try:
-            if superset_refresh_columns:
-                refresh_columns_in_superset(superset, sst_dataset_id)
-            sst_dataset_w_cols = add_superset_columns(superset, sst_dataset)
-            sst_dataset_w_cols_new = merge_columns_info(sst_dataset_w_cols, dbt_tables)
-            put_columns_to_superset(superset, sst_dataset_w_cols_new)
-        except HTTPError as e:
-            logging.error("The dataset named %s with ID=%d wasn't updated. Check the error below.",
-                          sst_dataset_name, sst_dataset_id, exc_info=e)
+
+        logging.info("Processing dataset %d/%d, ID: %d, name: %s.", i + 1, len(sst_datasets), sst_dataset_id, sst_dataset_name)
+
+        # Only process datasets which exist in dbt:
+        if dbt_tables.get(sst_dataset_name, None) is not None:
+            try:
+                if superset_refresh_columns:
+                    refresh_columns_in_superset(superset, sst_dataset_id)
+                sst_dataset_w_cols = add_superset_columns(superset, sst_dataset)
+                sst_dataset_w_cols_new = merge_columns_info(sst_dataset_w_cols, dbt_tables)
+                put_columns_to_superset(superset, sst_dataset_w_cols_new)
+            except HTTPError as e:
+                logging.error("The dataset named %s with ID=%d wasn't updated. Check the error below.",
+                            sst_dataset_name, sst_dataset_id, exc_info=e)
 
     logging.info("All done!")
