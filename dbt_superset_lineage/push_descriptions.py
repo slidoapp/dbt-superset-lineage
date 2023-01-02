@@ -312,16 +312,18 @@ def put_columns_to_superset(superset, dataset):
 
 def main(dbt_project_dir, dbt_db_name,
          superset_url, superset_db_id, superset_refresh_columns,
-         superset_access_token, superset_refresh_token):
+         superset_access_token, superset_refresh_token,
+         superset_user, superset_password):
 
-    # require at least one token for Superset
-    assert superset_access_token is not None or superset_refresh_token is not None, \
+    # require at least one token for Superset or a username/password combination
+    assert superset_access_token is not None or superset_refresh_token is not None or (superset_user is not None and superset_password is not None), \
            "Add ``SUPERSET_ACCESS_TOKEN`` or ``SUPERSET_REFRESH_TOKEN`` " \
            "to your environment variables or provide in CLI " \
            "via ``superset-access-token`` or ``superset-refresh-token``."
 
     superset = Superset(superset_url + '/api/v1',
-                        access_token=superset_access_token, refresh_token=superset_refresh_token)
+                        access_token=superset_access_token, refresh_token=superset_refresh_token,
+                        user=superset_user, password=superset_password)
 
     logging.info("Starting the script!")
 

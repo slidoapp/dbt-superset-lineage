@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 class Superset:
     """A class for accessing the Superset API in an easy way."""
 
-    def __init__(self, api_url, access_token=None, refresh_token=None):
+    def __init__(self, api_url, access_token=None, refresh_token=None, user=None, password=None):
         """Instantiates the class.
 
         If ``access_token`` is None, attempts to obtain it using ``refresh_token``.
@@ -24,6 +24,11 @@ class Superset:
         self.api_url = api_url
         self.access_token = access_token
         self.refresh_token = refresh_token
+        self.user = user
+        self.password = password
+
+        if self.access_token is None and self.refresh_token is None and self.user is not None and self.password is not None:
+            self._login()
 
         if self.access_token is None:
             self._refresh_access_token()
@@ -50,6 +55,26 @@ class Superset:
         self.access_token = res['access_token']
 
         logger.debug("Token refreshed successfully")
+        return True
+
+    def _login(self):
+        logger.debug("Logging in with username/password")
+
+        body = {
+            'provider': 'db',
+            'username': self.user,
+            'password': self.password,
+            'refresh': True 
+        }
+        
+        res = self.request('POST', '/security/login',
+                           json=body,
+                           refresh_token_if_needed=False)
+
+        self.access_token = res['access_token']
+        self.refresh_token = res['refresh_token']
+
+        logger.debug("Logged in successfully")
         return True
 
     def request(self, method, endpoint, refresh_token_if_needed=True, headers=None,
