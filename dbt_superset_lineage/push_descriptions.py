@@ -358,6 +358,7 @@ def main(dbt_project_dir, dbt_db_name,
     for i, sst_dataset in enumerate(sst_datasets):
         logging.info("Processing dataset %d/%d.", i + 1, len(sst_datasets))
         sst_dataset_id = sst_dataset['id']
+        sst_dataset_name = sst_dataset['key']
         try:
             if superset_refresh_columns:
                 refresh_columns_in_superset(superset, sst_dataset_id)
@@ -365,7 +366,7 @@ def main(dbt_project_dir, dbt_db_name,
             sst_dataset_w_cols_new = merge_columns_info(sst_dataset_w_cols, dbt_tables)
             put_columns_to_superset(superset, sst_dataset_w_cols_new)
         except HTTPError as e:
-            logging.error("The dataset with ID=%d wasn't updated. Check the error below.",
-                          sst_dataset_id, exc_info=e)
+            logging.error("The dataset named %s with ID=%d wasn't updated. Check the error below.",
+                          sst_dataset_name, sst_dataset_id, exc_info=e)
 
     logging.info("All done!")
