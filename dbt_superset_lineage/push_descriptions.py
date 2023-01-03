@@ -154,6 +154,7 @@ def merge_columns_info(dataset, tables):
     logging.info("Merging columns info from Superset and manifest.json file.")
 
     key = dataset['key']
+    id = dataset['id']
 
     meta_sst = dataset['meta']
     
@@ -193,9 +194,9 @@ def merge_columns_info(dataset, tables):
     dbt_columns = tables.get(key, {}).get('columns', {})
 
     # DEBUG
-    with open('/Users/philippleufke/tmp/dbt_superset_debug/sst_columns.json', 'w') as fp:
+    with open(f'/Users/philippleufke/tmp/dbt_superset_debug/superset_columns__dataset_{id}.json', 'w') as fp:
         json.dump(sst_columns, fp, sort_keys=True, indent=4)
-    with open('/Users/philippleufke/tmp/dbt_superset_debug/dbt_columns.json', 'w') as fp:
+    with open(f'/Users/philippleufke/tmp/dbt_superset_debug/dbt_columns__dataset_{id}.json', 'w') as fp:
         json.dump(dbt_columns, fp, sort_keys=True, indent=4)
 
 
@@ -246,6 +247,11 @@ def merge_columns_info(dataset, tables):
                 # Fall back to Title Cased column_name if verbose_name is not manually set in Superset
                 column_new['verbose_name'] = column_name.replace('_', ' ').title()
 
+            # Append unit to verbose_name, if present:
+            if column_name in dbt_columns:
+                unit = dbt_columns[column_name]['meta'].get('unit', None)
+                if unit is not None:
+                    column_new['verbose_name'] = column_new['verbose_name'] + f' [{unit}]'
 
             # add is_filterable which is in the `meta` dict in the 'bi_integration' section
             if column_name in dbt_columns \
@@ -262,8 +268,25 @@ def merge_columns_info(dataset, tables):
                 column_new['groupby'] = is_groupable
                 # DEBUG
                 # logging.info("Column %s is groupable?: %s", column_name, is_groupable)
-
-
+        else:
+            # Preserve calculated columns:
+            # Note: type_generic and created_on cannot be included, apparently.
+            preserve_fields_list = [
+                'column_name', 
+                'description', 
+                'expression', 
+                'filterable', 
+                'groupby', 
+                'verbose_name',
+                'type',
+                'advanced_data_type',
+                'extra',
+                'is_active',
+                'is_dttm',
+                'python_date_format'
+            ]
+            for field in preserve_fields_list:
+                column_new[field] = sst_column[field]
 
         columns_new.append(column_new)
 
@@ -295,8 +318,10 @@ def register_dataset_in_superset(superset, superset_db_id, table):
 def put_columns_to_superset(superset, dataset):
     logging.info("Putting new columns info with descriptions back into Superset.")
 
+    id = dataset['id']
+
     # DEBUG
-    with open('/Users/philippleufke/tmp/dbt_superset_debug/dataset.json', 'w') as fp:
+    with open(f'/Users/philippleufke/tmp/dbt_superset_debug/merged__dataset_{id}.json', 'w') as fp:
         json.dump(dataset, fp, sort_keys=True, indent=4)
 
 
@@ -304,7 +329,7 @@ def put_columns_to_superset(superset, dataset):
     body['columns'] = dataset['columns_new']
 
     # DEBUG
-    with open('/Users/philippleufke/tmp/dbt_superset_debug/dataset_update_body.json', 'w') as fp:
+    with open(f'/Users/philippleufke/tmp/dbt_superset_debug/update_body__dataset_{id}.json', 'w') as fp:
         json.dump(body, fp, sort_keys=True, indent=4)
 
     superset.request('PUT', f"/dataset/{dataset['id']}?override_columns=true", json=body)
