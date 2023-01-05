@@ -207,19 +207,40 @@ def merge_columns_info(dataset, tables):
         column_name = sst_column['column_name']
         column_new = {'column_name': column_name}
 
-        if not meta_new['is_managed_externally']:
+        # Note: type_generic and created_on cannot be included, apparently.
+        preserve_fields_list = [
+            'column_name', 
+            'description', 
+            'expression', 
+            'filterable', 
+            'groupby', 
+            'verbose_name',
+            'type',
+            'advanced_data_type',
+            'extra',
+            'is_active',
+            'is_dttm',
+            'python_date_format'
+        ]
+
+        if (not meta_new['is_managed_externally']) or (len(sst_column['expression']) > 0):
             # Pre-populate the columns information with the one that already exists in Superset,
-            # but only if the dataset is not managed _exclusively_ via dbt.
+            # but only if the dataset is not managed _exclusively_ via dbt
+            # or if the SQL expression is not empty, i.e., if it is a calculated column.
             # In the latter case we overwrite the columns information of the columns that 
             # are not calculated columns.
 
-
-            # add optional fields only if not already None, otherwise it would error out
-            # Note: `type_generic` is not yet exposed in PUT but returned in GET dataset
-            for field in ['advanced_data_type', 'description', 'expression', 'extra', 'filterable', 'groupby', 'python_date_format',
-                        'verbose_name', 'type', 'is_dttm', 'is_active']:
+            # Add optional fields only if not already None, otherwise it would error out:
+            for field in preserve_fields_list:
                 if sst_column[field] is not None:
                     column_new[field] = sst_column[field]
+
+        # In any case, set `is_dttm`` based on the data type determined by Superset;
+        # currently there we have no dbt `meta` field assigned for this, as it should not be needed this way.
+        if sst_column.get('type') in ['DATE', 'TIMESTAMP'] or sst_column.get('is_dttm') == True:
+            column_new['is_dttm'] = True
+            # DEBUG
+            # logging.info("Column %s of datased %d is temporal", column_name, id)
 
         # Overwrite if the column is not a calculated column:
         # Note: after initial registration the "expression" field is null and not an empty string!
@@ -268,25 +289,6 @@ def merge_columns_info(dataset, tables):
                 column_new['groupby'] = is_groupable
                 # DEBUG
                 # logging.info("Column %s is groupable?: %s", column_name, is_groupable)
-        else:
-            # Preserve calculated columns:
-            # Note: type_generic and created_on cannot be included, apparently.
-            preserve_fields_list = [
-                'column_name', 
-                'description', 
-                'expression', 
-                'filterable', 
-                'groupby', 
-                'verbose_name',
-                'type',
-                'advanced_data_type',
-                'extra',
-                'is_active',
-                'is_dttm',
-                'python_date_format'
-            ]
-            for field in preserve_fields_list:
-                column_new[field] = sst_column[field]
 
         columns_new.append(column_new)
 
