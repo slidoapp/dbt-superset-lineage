@@ -41,6 +41,9 @@ def push_descriptions(dbt_project_dir: str = typer.Option('.', help="Directory p
                                                                    "https://mysuperset.mycompany.com"),
                       superset_db_id: int = typer.Option(None, help="ID of your database within Superset towards which "
                                                                     "the push should be reduced to run."),
+                      superset_debug_dir: str = typer.Option(None, envvar="SUPERSET_DEBUG_DIR",
+                                                             help="A path to a directory where debugging files  "
+                                                                  "will be placed if this option is specified."),
                       superset_refresh_columns: bool = typer.Option(False, help="Whether columns in Superset should be "
                                                                                 "refreshed from database before "
                                                                                 "the push."),
@@ -56,7 +59,7 @@ def push_descriptions(dbt_project_dir: str = typer.Option('.', help="Directory p
                                                                  help="Password of the Superset user.")):
 
     push_descriptions_main(dbt_project_dir, dbt_db_name,
-                           superset_url, superset_db_id, superset_refresh_columns,
+                           superset_url, superset_db_id, superset_debug_dir, superset_refresh_columns,
                            superset_access_token, superset_refresh_token,
                            superset_user, superset_password)
 

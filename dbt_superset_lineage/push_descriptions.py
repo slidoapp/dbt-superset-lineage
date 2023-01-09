@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import re
 
 from bs4 import BeautifulSoup
@@ -59,7 +60,7 @@ def get_datasets_from_superset(superset, superset_db_id):
     return datasets
 
 
-def get_tables_from_dbt(dbt_manifest, dbt_db_name):
+def get_tables_from_dbt(dbt_manifest, dbt_db_name, debug_dir):
     tables = {}
     for table_type in ['nodes', 'sources']:
         manifest_subset = dbt_manifest[table_type]
@@ -87,9 +88,10 @@ def get_tables_from_dbt(dbt_manifest, dbt_db_name):
 
     assert tables, "Manifest is empty!"
 
-    # DEBUG
-    with open('/Users/philippleufke/tmp/dbt_superset_debug/dbt_tables.json', 'w') as fp:
-        json.dump(tables, fp, sort_keys=True, indent=4)
+    if debug_dir is not None:
+        dbt_tables_file_path = os.path.join(debug_dir, 'dbt_tables.json')
+        with open(dbt_tables_file_path, 'w') as fp:
+            json.dump(tables, fp, sort_keys=True, indent=4)
 
     return tables
 
@@ -150,7 +152,7 @@ def convert_markdown_to_plain_text(md_string):
     return single_line
 
 
-def merge_columns_info(dataset, tables):
+def merge_columns_info(dataset, tables, debug_dir):
     logging.info("Merging columns info from Superset and manifest.json file.")
 
     key = dataset['key']
@@ -227,11 +229,16 @@ def merge_columns_info(dataset, tables):
     sst_columns = dataset['columns']
     dbt_columns = tables.get(key, {}).get('columns', {})
 
-    # DEBUG
-    with open(f'/Users/philippleufke/tmp/dbt_superset_debug/superset_columns__dataset_{id}.json', 'w') as fp:
-        json.dump(sst_columns, fp, sort_keys=True, indent=4)
-    with open(f'/Users/philippleufke/tmp/dbt_superset_debug/dbt_columns__dataset_{id}.json', 'w') as fp:
-        json.dump(dbt_columns, fp, sort_keys=True, indent=4)
+    if debug_dir is not None:
+        # Superset columns:
+        superset_columns_file_path = os.path.join(debug_dir, f'superset_columns__dataset_{id}.json')
+        with open(superset_columns_file_path, 'w') as fp:
+            json.dump(sst_columns, fp, sort_keys=True, indent=4)
+
+        # dbt columns:
+        dbt_columns_file_path = os.path.join(debug_dir, f'dbt_columns__dataset_{id}.json')
+        with open(dbt_columns_file_path, 'w') as fp:
+            json.dump(dbt_columns, fp, sort_keys=True, indent=4)
 
 
     columns_new = []
@@ -331,7 +338,7 @@ def merge_columns_info(dataset, tables):
     return dataset
 
 
-def register_dataset_in_superset(superset, superset_db_id, table):
+def register_dataset_in_superset(superset, superset_db_id, table, debug_dir):
     logging.info("Registering database table in Superset: %s", table)
 
     schema_name, table_name = table.split('.')
@@ -342,37 +349,40 @@ def register_dataset_in_superset(superset, superset_db_id, table):
         "table_name": table_name
     }
 
-    # DEBUG
-    with open('/Users/philippleufke/tmp/dbt_superset_debug/register_dataset_body.json', 'w') as fp:
-        json.dump(body, fp, sort_keys=True, indent=4)
+    if debug_dir is not None:
+        register_dataset_body_file_path = os.path.join(debug_dir, f'register_dataset_body__{schema_name}_{table_name}.json')
+        with open(register_dataset_body_file_path, 'w') as fp:
+            json.dump(body, fp, sort_keys=True, indent=4)
 
     superset.request('POST', f"/dataset/", json=body)
 
 
 
 
-def put_columns_to_superset(superset, dataset):
+def put_columns_to_superset(superset, dataset, debug_dir):
     logging.info("Putting new columns info with descriptions back into Superset.")
 
     id = dataset['id']
 
-    # DEBUG
-    with open(f'/Users/philippleufke/tmp/dbt_superset_debug/merged__dataset_{id}.json', 'w') as fp:
-        json.dump(dataset, fp, sort_keys=True, indent=4)
+    if debug_dir is not None:
+        merged_dataset_file_path = os.path.join(debug_dir, f'merged__dataset_{id}.json')
+        with open(merged_dataset_file_path, 'w') as fp:
+            json.dump(dataset, fp, sort_keys=True, indent=4)
 
 
     body = dataset['meta_new']
     body['columns'] = dataset['columns_new']
 
-    # DEBUG
-    with open(f'/Users/philippleufke/tmp/dbt_superset_debug/update_body__dataset_{id}.json', 'w') as fp:
-        json.dump(body, fp, sort_keys=True, indent=4)
+    if debug_dir is not None:
+        update_body_file_path = os.path.join(debug_dir, f'update_body__dataset_{id}.json')
+        with open(update_body_file_path, 'w') as fp:
+            json.dump(body, fp, sort_keys=True, indent=4)
 
     superset.request('PUT', f"/dataset/{dataset['id']}?override_columns=true", json=body)
 
 
 def main(dbt_project_dir, dbt_db_name,
-         superset_url, superset_db_id, superset_refresh_columns,
+         superset_url, superset_db_id, superset_debug_dir, superset_refresh_columns,
          superset_access_token, superset_refresh_token,
          superset_user, superset_password):
 
@@ -396,20 +406,16 @@ def main(dbt_project_dir, dbt_db_name,
     with open(f'{dbt_project_dir}/target/manifest.json') as f:
         dbt_manifest = json.load(f)
 
-    dbt_tables = get_tables_from_dbt(dbt_manifest, dbt_db_name)
+    dbt_tables = get_tables_from_dbt(dbt_manifest, dbt_db_name, superset_debug_dir)
 
     # Auto-registration of dbt models in Superset:
     # Which tables are set to be auto-registered in dbt and are not yet present in Superset?:
     auto_register_tables = get_auto_register_tables(sst_datasets, dbt_tables)
 
-    # DEBUG
-    # with open('/Users/philippleufke/tmp/dbt_superset_debug/auto_register_tables.json', 'w') as fp:
-    #     json.dump(auto_register_tables, fp, sort_keys=True, indent=4)
-
     # Register them
     for table in auto_register_tables:
         try:
-            register_dataset_in_superset(superset, superset_db_id,table)
+            register_dataset_in_superset(superset, superset_db_id, table, superset_debug_dir)
         except HTTPError as e:
             logging.error("The database table %s could not be registered. Check the error below.",
                           table, exc_info=e)
@@ -435,8 +441,8 @@ def main(dbt_project_dir, dbt_db_name,
                 if superset_refresh_columns:
                     refresh_columns_in_superset(superset, sst_dataset_id)
                 sst_dataset_w_cols = add_superset_columns(superset, sst_dataset)
-                sst_dataset_w_cols_new = merge_columns_info(sst_dataset_w_cols, dbt_tables)
-                put_columns_to_superset(superset, sst_dataset_w_cols_new)
+                sst_dataset_w_cols_new = merge_columns_info(sst_dataset_w_cols, dbt_tables, superset_debug_dir)
+                put_columns_to_superset(superset, sst_dataset_w_cols_new, superset_debug_dir)
             except HTTPError as e:
                 logging.error("The dataset named %s with ID=%d wasn't updated. Check the error below.",
                             sst_dataset_name, sst_dataset_id, exc_info=e)
