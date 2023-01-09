@@ -190,23 +190,23 @@ def merge_columns_info(dataset, tables):
     meta_new['main_dttm_col'] = meta_dbt.get('bi_integration', {}).get('main_timestamp_column')
     meta_new['owners'] = meta_dbt.get('owners', [])
 
-    # `extra` field:
+    # Populate the dataset's `extra` field:
 
     # Handle dataset certification:
     # We only inlcude a certification if the certified_by is not empty
     # The certification details then contains a concatenation of the certification.details field
     # and the model_maturity field, if exists.
-    certification = meta_dbt.get('certification', None) or dict()
-    certified_by = certification.get('certified_by', None)
+    certification = meta_dbt.get('certification') or dict()
+    certified_by = certification.get('certified_by')
     extra_dict = dict()
 
     if certified_by is not None:
-        if meta_dbt.get('model_maturity', None) is not None:
+        if meta_dbt.get('model_maturity') is not None:
             model_maturity = 'maturity: ' + meta_dbt.get('model_maturity')
         else:
             model_maturity = None
         # Write to list and remove empty elements, so we end up with a clean looking concatenation:
-        certification_details_list = [certification.get('details', None), model_maturity]
+        certification_details_list = [certification.get('details'), model_maturity]
         certification_details_list = [i for i in certification_details_list if i is not None]
         certification_details = '; '.join(certification_details_list)
         extra_dict['certification'] = {"certified_by": certified_by, "details": certification_details}
