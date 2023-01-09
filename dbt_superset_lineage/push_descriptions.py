@@ -171,9 +171,11 @@ def merge_columns_info(dataset, tables):
     # to be managed externally (i.e., by dbt).
     # The dbt meta data field `prohibit_manual_editing` decides whether the dataset
     # is externally managed, NOT Superset's metadata!
+
     meta_new['is_managed_externally'] = meta_dbt.get('bi_integration', {}).get('prohibit_manual_editing', False)
+
     if not meta_new['is_managed_externally']:
-        for field in ['cache_timeout', 'description', 'fetch_values_predicate', 'filter_select_enabled', 'is_managed_externally', 'main_dttm_col']:
+        for field in ['cache_timeout', 'description', 'fetch_values_predicate', 'filter_select_enabled', 'main_dttm_col']:
             if meta_sst[field] is not None:
                 meta_new[field] = meta_sst[field]
 
@@ -186,7 +188,39 @@ def merge_columns_info(dataset, tables):
     meta_new['fetch_values_predicate'] = meta_dbt.get('bi_integration', {}).get('filter_value_extraction', {}).get('where')
     meta_new['filter_select_enabled'] = meta_dbt.get('bi_integration', {}).get('filter_value_extraction', {}).get('enable')
     meta_new['main_dttm_col'] = meta_dbt.get('bi_integration', {}).get('main_timestamp_column')
-        
+    meta_new['owners'] = meta_dbt.get('owners', [])
+
+    # `extra` field:
+
+    # Handle dataset certification:
+    # We only inlcude a certification if the certified_by is not empty
+    # The certification details then contains a concatenation of the certification.details field
+    # and the model_maturity field, if exists.
+    certification = meta_dbt.get('certification', None) or dict()
+    certified_by = certification.get('certified_by', None)
+    extra_dict = dict()
+
+    if certified_by is not None:
+        if meta_dbt.get('model_maturity', None) is not None:
+            model_maturity = 'maturity: ' + meta_dbt.get('model_maturity')
+        else:
+            model_maturity = None
+        # Write to list and remove empty elements, so we end up with a clean looking concatenation:
+        certification_details_list = [certification.get('details', None), model_maturity]
+        certification_details_list = [i for i in certification_details_list if i is not None]
+        certification_details = '; '.join(certification_details_list)
+        extra_dict['certification'] = {"certified_by": certified_by, "details": certification_details}
+
+    # Add warning_markdown field if exists:
+    warning_markdown = meta_dbt.get('bi_integration', {}).get('warning_markdown')
+    if warning_markdown is not None:
+        extra_dict['warning_markdown'] = warning_markdown
+
+    # The `extra` field requires escaped JSON as value:
+    extra_json = json.dumps(extra_dict)
+    meta_new['extra'] = extra_json
+
+
     dataset['meta_new'] = meta_new
 
     # Columns:
@@ -223,7 +257,7 @@ def merge_columns_info(dataset, tables):
             'python_date_format'
         ]
 
-        if (not meta_new['is_managed_externally']) or (len(sst_column['expression']) > 0):
+        if (not meta_new['is_managed_externally']) or (len(sst_column.get('expression', '')) > 0):
             # Pre-populate the columns information with the one that already exists in Superset,
             # but only if the dataset is not managed _exclusively_ via dbt
             # or if the SQL expression is not empty, i.e., if it is a calculated column.
@@ -390,6 +424,10 @@ def main(dbt_project_dir, dbt_db_name,
         sst_dataset_name = sst_dataset['key']
 
         logging.info("Processing dataset %d/%d, ID: %d, name: %s.", i + 1, len(sst_datasets), sst_dataset_id, sst_dataset_name)
+
+        # DEBUG:
+        #if sst_dataset_id != 87:
+        #    continue
 
         # Only process datasets which exist in dbt:
         if dbt_tables.get(sst_dataset_name, None) is not None:
