@@ -142,10 +142,10 @@ models:
         - 2 # Kevin
         - 3 # Martha
 
-        # Note:
-        # It is often useful to globally set the attributes above in `dbt_project.yml`
-        # (see below) and only include it in the dataset's configuration (here)
-        # for overriding the global configuration.
+      # Note:
+      # It is often useful to globally set the attributes above in `dbt_project.yml`
+      # (see below) and only include it in the dataset's configuration (here)
+      # for overriding the global configuration.
 
 
       # The settings in the `bi_integration` node are best kept in each model and
