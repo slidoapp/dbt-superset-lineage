@@ -185,9 +185,9 @@ models:
         # In Superset's API this field is equally called `warning_markdown`. 
         warning_markdown: >
           1. To achieve correct results, any query _must_...
-              * either **filter on a single classification_l1 value**
-              * or **group by classification_l1**.
-          2. Ensure to use `sum(mrm_count)` to count the MRMs per classification.
+              * either **filter on a single `classification` value**
+              * or **group by `classification`**.
+          2. Ensure to use `sum(event_count)` to count the events per classification.
 ```
 
 As stated above, it often is useful to set some of the `meta` fields _globally_
