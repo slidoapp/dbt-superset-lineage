@@ -65,6 +65,10 @@ class Superset:
         Raises:
             HTTPError: There is an HTTP error (detected by ``requests.Response.raise_for_status``)
                 even after retrying with a fresh ``access_token``.
+
+        For inspiration on how to do this more beautifully:
+        https://github.com/metriql/metriql-superset/blob/main/metriql2superset/superset.py#L21
+        https://github.com/apache/superset/issues/16398#issuecomment-1293583699
         """
 
         logger.info("About to %s execute request for endpoint %s", method, endpoint)
