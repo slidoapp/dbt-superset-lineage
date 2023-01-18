@@ -27,38 +27,11 @@ class Superset:
         self.user = user
         self.password = password
 
-        if self.access_token is None and self.refresh_token is None and self.user is not None and self.password is not None:
+        if self.access_token is None and self.user is not None and self.password is not None:
             self._login()
 
-        if self.access_token is None:
-            self._refresh_access_token()
-
-    def _headers(self, **headers):
-        if self.access_token is None:
-            return headers
-
-        return {
-            'Authorization': f'Bearer {self.access_token}',
-            **headers,
-        }
-
-    def _refresh_access_token(self):
-        logger.debug("Refreshing API token")
-
-        if self.refresh_token is None:
-            logging.warning("Cannot refresh access_token, refresh_token is None")
-            return False
-
-        res = self.request('POST', '/security/refresh',
-                           headers={'Authorization': f'Bearer {self.refresh_token}'},
-                           refresh_token_if_needed=False)
-        self.access_token = res['access_token']
-
-        logger.debug("Token refreshed successfully")
-        return True
-
     def _login(self):
-        logger.debug("Logging in with username/password")
+        logger.info("Logging in with username/password")
 
         body = {
             'provider': 'db',
@@ -66,19 +39,17 @@ class Superset:
             'password': self.password,
             'refresh': True 
         }
-        
-        res = self.request('POST', '/security/login',
-                           json=body,
-                           refresh_token_if_needed=False)
+        url = self.api_url + '/security/login'
+        res = requests.request('POST', url, headers={},
+                           json=body)
 
-        self.access_token = res['access_token']
-        self.refresh_token = res['refresh_token']
+        self.access_token = res.json()['access_token']
+        self.refresh_token = res.json()['refresh_token']
 
-        logger.debug("Logged in successfully")
+        logger.info("Logged in successfully")
         return True
 
-    def request(self, method, endpoint, refresh_token_if_needed=True, headers=None,
-                **request_kwargs):
+    def request(self, method, endpoint, refresh_token_if_needed=True, **request_kwargs):
         """Executes a request against the Superset API.
 
         Args:
@@ -86,7 +57,6 @@ class Superset:
             endpoint: Endpoint to use.
             refresh_token_if_needed: Whether the ``access_token`` should be automatically refreshed
                 if needed.
-            headers: Additional headers to use.
             **request_kwargs: Any ``requests.request`` arguments to use.
 
         Returns:
@@ -99,19 +69,21 @@ class Superset:
 
         logger.info("About to %s execute request for endpoint %s", method, endpoint)
 
-        if headers is None:
-            headers = {}
+        session = requests.Session()
+        session.headers['Authorization'] = 'Bearer ' + self.access_token
+        session.headers['Content-Type'] = 'application/json'
+
+        csrf_url = self.api_url + '/security/csrf_token/'
+        csrf_res = session.get(csrf_url)
+        csrf_token = csrf_res.json()['result']
+        session.headers['Referer']= csrf_url
+        session.headers['X-CSRFToken'] = csrf_token
 
         url = self.api_url + endpoint
-        res = requests.request(method, url, headers=self._headers(**headers), **request_kwargs)
+        #res = requests.request(method, url, headers=self._headers(**headers), **request_kwargs)
+        res = session.request(method, url, **request_kwargs)
 
         logger.debug("Request finished with status: %d", res.status_code)
-
-        if refresh_token_if_needed and res.status_code == 401 \
-                and res.json().get('msg') == 'Token has expired' and self._refresh_access_token():
-            logger.debug("Retrying %s request for endpoint %s with refreshed token")
-            res = requests.request(method, url, headers=self._headers(**headers))
-            logger.debug("Request finished with status: %d", res.status_code)
 
         res.raise_for_status()
         return res.json()

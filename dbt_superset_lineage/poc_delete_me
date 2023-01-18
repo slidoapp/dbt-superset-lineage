@@ -1,0 +1,35 @@
+
+import requests
+import json
+
+base = 'https://superset.reeinfra.net/'
+access_token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJmcmVzaCI6dHJ1ZSwiaWF0IjoxNjc0MDU0MTc3LCJqdGkiOiJlYzRkMjZiMS0wNzU3LTRjZjgtODA4MC1kODk0Zjg1Y2YxZmQiLCJ0eXBlIjoiYWNjZXNzIiwic3ViIjo4LCJuYmYiOjE2NzQwNTQxNzcsImV4cCI6MTY3NDA1NTA3N30.UvIpIeh6Nr7935cDw0CRW8uqRjY88582BsHQBJoZ8Uc'
+
+def add_superset_dataset(database_id, schema, table_name):
+    payload = {
+        "database": database_id,
+        "schema": schema,
+        "table_name": table_name
+    }
+    url = f"{base}/api/v1/dataset/"
+
+    session = requests.Session()
+    session.headers['Authorization'] = 'Bearer ' + access_token
+    session.headers['Content-Type'] = 'application/json'
+
+    csrf_url = f"{base}/api/v1/security/csrf_token/"
+    csrf_res = session.get(csrf_url)
+    csrf_token = csrf_res.json()['result']
+
+    session.headers['Referer']= csrf_url
+    session.headers['X-CSRFToken'] = csrf_token
+    
+    payload_json = json.dumps(payload)
+
+    #r = session.post(url, data=payload_json)
+    r = session.request('POST', url, data=payload_json)
+
+    return r.json()
+
+ret = add_superset_dataset('4', 'data_warehouse_l3', 'production_mrms')
+print(ret)
