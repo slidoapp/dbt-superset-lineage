@@ -264,7 +264,7 @@ def merge_columns_info(dataset, tables, debug_dir):
             'python_date_format'
         ]
 
-        if (not meta_new['is_managed_externally']) or (len(sst_column.get('expression', '')) > 0):
+        if (not meta_new['is_managed_externally']) or sst_column.get('expression') is None or (len(sst_column.get('expression', '')) > 0):
             # Pre-populate the columns information with the one that already exists in Superset,
             # but only if the dataset is not managed _exclusively_ via dbt
             # or if the SQL expression is not empty, i.e., if it is a calculated column.
