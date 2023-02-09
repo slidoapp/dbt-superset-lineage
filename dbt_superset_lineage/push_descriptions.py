@@ -264,17 +264,10 @@ def merge_columns_info(dataset, tables, debug_dir):
             'python_date_format'
         ]
 
-        if (not meta_new['is_managed_externally']) or sst_column.get('expression') is None or (len(sst_column.get('expression', '')) > 0):
-            # Pre-populate the columns information with the one that already exists in Superset,
-            # but only if the dataset is not managed _exclusively_ via dbt
-            # or if the SQL expression is not empty, i.e., if it is a calculated column.
-            # In the latter case we overwrite the columns information of the columns that 
-            # are not calculated columns.
-
-            # Add optional fields only if not already None, otherwise it would error out:
-            for field in preserve_fields_list:
-                if sst_column[field] is not None:
-                    column_new[field] = sst_column[field]
+        
+        for field in preserve_fields_list:
+            if sst_column[field] is not None:
+                column_new[field] = sst_column[field]
 
         # In any case, set `is_dttm`` based on the data type determined by Superset;
         # currently there we have no dbt `meta` field assigned for this, as it should not be needed this way.
@@ -283,53 +276,51 @@ def merge_columns_info(dataset, tables, debug_dir):
             # DEBUG
             # logging.info("Column %s of datased %d is temporal", column_name, id)
 
-        # Overwrite if the column is not a calculated column:
-        # Note: after initial registration the "expression" field is null and not an empty string!
-        if sst_column['expression'] == '' or sst_column['expression'] is None:
-            # add description
-            if column_name in dbt_columns \
-                    and 'description' in dbt_columns[column_name]:
-                description = dbt_columns[column_name]['description']
-                description = convert_markdown_to_plain_text(description)
-            else:
-                description = sst_column['description']
-            column_new['description'] = description
 
-            
-            # Meta fields:
-            # The column meta fields are called differently in Superset and thus need to be renamed.
-            # For this reason this code is not DRY for now...
+        # We always overwrite the following fields from dbt's settings:
 
-            # add verbose_name which is in the `meta` dict in dbt
-            if column_name in dbt_columns \
-                    and 'verbose_name' in dbt_columns[column_name]['meta']:
-                verbose_name = dbt_columns[column_name]['meta']['verbose_name']
-                column_new['verbose_name'] = verbose_name
-            elif column_new.get('verbose_name', '') == '':
-                # Fall back to Title Cased column_name if verbose_name is not manually set in Superset
-                column_new['verbose_name'] = column_name.replace('_', ' ').title()
+        if column_name in dbt_columns \
+                and 'description' in dbt_columns[column_name]:
+            description = dbt_columns[column_name]['description']
+            description = convert_markdown_to_plain_text(description)
+        else:
+            description = sst_column['description']
+        column_new['description'] = description
 
-            # Append unit to verbose_name, if present:
-            if column_name in dbt_columns:
-                unit = dbt_columns[column_name]['meta'].get('unit', None)
-                if unit is not None:
-                    column_new['verbose_name'] = column_new['verbose_name'] + f' [{unit}]'
+        # Meta fields:
+        # The column meta fields are called differently in Superset and thus need to be renamed.
+        # For this reason this code is not DRY for now...
 
-            # add is_filterable which is in the `meta` dict in the 'bi_integration' section
-            if column_name in dbt_columns \
-                    and 'is_filterable' in dbt_columns[column_name]['meta'].get('bi_integration', {}):
-                is_filterable = dbt_columns[column_name]['meta']['bi_integration']['is_filterable']
-                column_new['filterable'] = is_filterable
-                # DEBUG
-                # logging.info("Column %s is filterable?: %s", column_name, is_filterable)
+        # add verbose_name which is in the `meta` dict in dbt
+        if column_name in dbt_columns \
+                and 'verbose_name' in dbt_columns[column_name]['meta']:
+            verbose_name = dbt_columns[column_name]['meta']['verbose_name']
+            column_new['verbose_name'] = verbose_name
+        else:
+            # Fall back to Title Cased column_name
+            column_new['verbose_name'] = column_name.replace('_', ' ').title()
 
-            # add is_groupable which is in the `meta` dict in the 'bi_integration' section
-            if column_name in dbt_columns \
-                    and 'is_groupable' in dbt_columns[column_name]['meta'].get('bi_integration', {}):
-                is_groupable = dbt_columns[column_name]['meta']['bi_integration']['is_groupable']
-                column_new['groupby'] = is_groupable
-                # DEBUG
-                # logging.info("Column %s is groupable?: %s", column_name, is_groupable)
+        # Append unit to verbose_name, if present:
+        if column_name in dbt_columns:
+            unit = dbt_columns[column_name]['meta'].get('unit', None)
+            if unit is not None:
+                column_new['verbose_name'] = column_new['verbose_name'] + f' [{unit}]'
+
+        # add is_filterable which is in the `meta` dict in the 'bi_integration' section
+        if column_name in dbt_columns \
+                and 'is_filterable' in dbt_columns[column_name]['meta'].get('bi_integration', {}):
+            is_filterable = dbt_columns[column_name]['meta']['bi_integration']['is_filterable']
+            column_new['filterable'] = is_filterable
+            # DEBUG
+            # logging.info("Column %s is filterable?: %s", column_name, is_filterable)
+
+        # add is_groupable which is in the `meta` dict in the 'bi_integration' section
+        if column_name in dbt_columns \
+                and 'is_groupable' in dbt_columns[column_name]['meta'].get('bi_integration', {}):
+            is_groupable = dbt_columns[column_name]['meta']['bi_integration']['is_groupable']
+            column_new['groupby'] = is_groupable
+            # DEBUG
+            # logging.info("Column %s is groupable?: %s", column_name, is_groupable)
 
         columns_new.append(column_new)
 
@@ -432,7 +423,7 @@ def main(dbt_project_dir, dbt_db_name,
         logging.info("Processing dataset %d/%d, ID: %d, name: %s.", i + 1, len(sst_datasets), sst_dataset_id, sst_dataset_name)
 
         # DEBUG:
-        #if sst_dataset_id != 87:
+        # if sst_dataset_id != 37:
         #    continue
 
         # Only process datasets which exist in dbt:
