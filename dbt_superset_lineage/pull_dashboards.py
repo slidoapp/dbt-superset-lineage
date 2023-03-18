@@ -172,7 +172,15 @@ def get_datasets_from_superset(superset, dashboards_datasets, dbt_tables,
     datasets = {}
     while True:
         logging.info("Getting page %d.", page_number + 1)
-        res = superset.request('GET', f'/dataset/?q={{"page":{page_number},"page_size":100}}')
+
+        payload = {
+            'q': {
+                'page': page_number,
+                'page_size': 100
+            }
+        }
+        res = superset.request('GET', '/dataset/', params=payload)
+
         result = res['result']
         if result:
             for r in result:
