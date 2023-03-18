@@ -85,7 +85,6 @@ in Superset when creating charts.
 - Descriptions are rendered as plain text, hence no markdown syntax, incl. links, will be displayed.
 - Avoid special characters and strings in your dbt docs, e.g. `→` or `<null>`.
 
-
 ```console
 $ cd jaffle_shop
 $ dbt compile  # Compile project to create manifest.json
@@ -95,7 +94,4 @@ $ dbt-superset-lineage push-descriptions https://mysuperset.mycompany.com  # Pus
 ![Column descriptions in Superset](assets/descriptions.png)
 
 ## License
-
 Licensed under the MIT license (see [LICENSE.md](LICENSE.md) file for more details).
-
-
