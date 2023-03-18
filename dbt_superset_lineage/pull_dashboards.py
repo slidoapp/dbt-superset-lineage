@@ -95,7 +95,7 @@ def get_dashboards_from_superset(superset, superset_url, superset_db_id):
                 'page_size': 100
             }
         }
-        res = superset.request('GET', '/dashboard/', params=payload)
+        res = superset.request('GET', '/dashboard/', json=payload)
 
         result = res['result']
         if result:
@@ -179,7 +179,7 @@ def get_datasets_from_superset(superset, dashboards_datasets, dbt_tables,
                 'page_size': 100
             }
         }
-        res = superset.request('GET', '/dataset/', params=payload)
+        res = superset.request('GET', '/dataset/', json=payload)
 
         result = res['result']
         if result:
