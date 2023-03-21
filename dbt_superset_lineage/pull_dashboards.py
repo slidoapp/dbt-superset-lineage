@@ -106,7 +106,7 @@ def get_dashboards_from_superset(superset, superset_url, superset_db_id):
         else:
             break
 
-    assert dashboards_id, "There are no dashboards in Superset!"
+    assert dashboards_id, "There are no published dashboards in Superset!"
 
     logging.info("There are %d published dashboards in Superset.", len(dashboards_id))
 

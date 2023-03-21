@@ -175,8 +175,8 @@ def merge_columns_info(dataset, tables):
 def put_columns_to_superset(superset, dataset):
     logging.info("Putting new columns info with descriptions back into Superset.")
 
-    body = {'columns': dataset['columns_new']}
-    superset.request('PUT', f"/dataset/{dataset['id']}?override_columns=true", json=body)
+    payload = {'columns': dataset['columns_new']}
+    superset.request('PUT', f"/dataset/{dataset['id']}?override_columns=true", json=payload)
 
 
 def main(dbt_project_dir, dbt_db_name,
