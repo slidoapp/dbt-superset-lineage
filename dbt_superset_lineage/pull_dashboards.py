@@ -90,10 +90,10 @@ def get_dashboards_from_superset(superset, superset_url, superset_db_id):
         logging.info("Getting page %d.", page_number + 1)
 
         payload = {
-            'q': {
+            'q': json.dumps({
                 'page': page_number,
                 'page_size': 100
-            }
+            })
         }
         res = superset.request('GET', '/dashboard/', params=payload)
 
@@ -174,10 +174,10 @@ def get_datasets_from_superset(superset, dashboards_datasets, dbt_tables,
         logging.info("Getting page %d.", page_number + 1)
 
         payload = {
-            'q': {
+            'q': json.dumps({
                 'page': page_number,
                 'page_size': 100
-            }
+            })
         }
         res = superset.request('GET', '/dataset/', params=payload)
 
