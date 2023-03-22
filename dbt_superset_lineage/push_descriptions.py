@@ -174,15 +174,10 @@ def merge_columns_info(dataset, tables):
 
 
 def put_descriptions_to_superset(superset, dataset):
-    logging.info("Putting model descriptions into Superset.")
+    logging.info("Putting model and column descriptions into Superset.")
 
-    payload_description = {'description': dataset['description']}
-    superset.request('PUT', f"/dataset/{dataset['id']}?override_columns=false", json=payload_description)
-
-    logging.info("Putting new columns info with descriptions back into Superset.")
-
-    payload_columns = {'columns': dataset['columns_new']}
-    superset.request('PUT', f"/dataset/{dataset['id']}?override_columns=true", json=payload_columns)
+    payload = {'description': dataset['description'], 'columns': dataset['columns_new']}
+    superset.request('PUT', f"/dataset/{dataset['id']}?override_columns=true", json=payload)
 
 
 def main(dbt_project_dir, dbt_db_name,
