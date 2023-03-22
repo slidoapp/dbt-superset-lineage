@@ -147,19 +147,20 @@ def merge_columns_info(dataset, tables):
     for sst_column in sst_columns:
 
         # add the mandatory field
-        column_new = {'column_name': sst_column['column_name']}
+        column_name = sst_column['column_name']
+        column_new = {'column_name': column_name}
 
-        # add optional fields only if not already None, otherwise it would error out
-        for field in ['expression', 'filterable', 'groupby', 'python_date_format',
-                      'verbose_name', 'type', 'is_dttm', 'is_active']:
-            if sst_column[field] is not None:
+        # get all fields apart from the ones that shouldn't be in the update payload and empty "is_active" (errors out)
+        for field in sst_column:
+            if field not in ["changed_on", "created_on", "type_generic", "is_active"] \
+                    or (field == 'is_active' and sst_column[field] is not None):
                 column_new[field] = sst_column[field]
 
         # add description
-        if sst_column['column_name'] in dbt_columns \
-                and 'description' in dbt_columns[sst_column['column_name']] \
+        if column_name in dbt_columns \
+                and 'description' in dbt_columns[column_name] \
                 and sst_column['expression'] == '':  # database columns
-            description = dbt_columns[sst_column['column_name']]['description']
+            description = dbt_columns[column_name]['description']
             description = convert_markdown_to_plain_text(description)
         else:
             description = sst_column['description']
