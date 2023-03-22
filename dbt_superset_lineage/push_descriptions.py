@@ -103,9 +103,13 @@ def refresh_columns_in_superset(superset, dataset_id):
 
 def add_superset_columns(superset, dataset):
     logging.info("Pulling fresh columns info from Superset.")
+
     res = superset.request('GET', f"/dataset/{dataset['id']}")
-    columns = res['result']['columns']
-    dataset['columns'] = columns
+    result = res['result']
+
+    dataset['columns'] = result['columns']
+    dataset['description'] = result['description']
+
     return dataset
 
 
@@ -144,6 +148,9 @@ def merge_columns_info(dataset, tables):
     sst_columns = dataset['columns']
     dbt_columns = tables.get(key, {}).get('columns', {})
 
+    sst_description = dataset['description']
+    dbt_description = tables.get(key, {}).get('description', '')
+
     columns_new = []
     for sst_column in sst_columns:
 
@@ -169,6 +176,11 @@ def merge_columns_info(dataset, tables):
         columns_new.append(column_new)
 
     dataset['columns_new'] = columns_new
+
+    if dbt_description == '':
+        dataset['description'] = sst_description
+    else:
+        dataset['description'] = dbt_description
 
     return dataset
 
