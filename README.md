@@ -52,8 +52,7 @@ as environment variable or through `--superset-access-token`/`superset-refresh-t
 - In case more databases are used within dbt and/or Superset and there are duplicate names (`schema + table`) across
   them, specify the database through `--dbt-db-name` and/or `--superset-db-id` options
 - Currently, `PUT` requests are only supported if CSRF tokens are disabled in Superset (`WTF_CSRF_ENABLED=False`).
-- Tested on dbt v0.20.0 and Apache Superset v1.3.0. Other versions, esp. those newer of Superset, might face errors due
-  to different underlying code and API.
+- Tested on dbt v1.4.5 and Apache Superset v2.0.1. Other versions might face errors due to different underlying code and API.
 
 ### Pull dashboards
 Pull dashboards from Superset and add them as
