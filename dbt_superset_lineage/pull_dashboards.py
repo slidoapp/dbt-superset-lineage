@@ -243,7 +243,7 @@ def get_exposures_dict(dashboards, exposures):
     exposures_dict = [{
         # remove non-word characters (unless it's space) and replace spaces with underscores
         # required since dbt v1.3
-        'name': re.sub(r'[^\w\s]+', '', dashboard['title']).replace(' ', '_'),
+        'name': re.sub(r'[^\w ]+', '', dashboard['title']).replace(' ', '_'),
         'label': dashboard['title'],
         'type': 'dashboard',
         'url': dashboard['url'],
