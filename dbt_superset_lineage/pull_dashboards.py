@@ -241,7 +241,10 @@ def get_exposures_dict(dashboards, exposures):
 
     exposures_orig = {exposure['url']: exposure for exposure in exposures}
     exposures_dict = [{
-        'name': dashboard['title'],
+        # remove non-word characters (unless it's space) and replace spaces with underscores
+        # required since dbt v1.3
+        'name': re.sub(r'[^\w ]+', '', dashboard['title']).replace(' ', '_'),
+        'label': dashboard['title'],
         'type': 'dashboard',
         'url': dashboard['url'],
         # get descriptions from original file through url (unique as it's based on dashboard id)
