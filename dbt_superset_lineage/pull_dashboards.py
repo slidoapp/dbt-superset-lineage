@@ -131,7 +131,7 @@ def get_dashboards_from_superset(superset, superset_url, superset_db_id):
             # parse dataset names split into parts
             datasets_parsed = [[dataset['database']['name'], dataset['schema'], dataset['table_name']]
                                for dataset in result_datasets]
-            datasets_parsed = [["NA" if x is None else x for x in dataset]
+            datasets_parsed = [['None' if x is None else x for x in dataset]
                                for dataset in datasets_parsed]  # replace None with string "None" if something missing
 
             # put them all together to get "database.schema.table"
