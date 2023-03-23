@@ -45,9 +45,9 @@ def get_tables_from_sql_simple(sql):
 def get_tables_from_sql(sql, dialect):
     try:
         sql_parsed = sqlfluff.parse(sql, dialect=dialect)
-        table_references = crawl_dict_recursive(sql_parsed, 'table_reference')
-        tables_naked = [crawl_dict_recursive(table_ref, 'naked_identifier') for table_ref in table_references]
-        tables_quoted = [crawl_dict_recursive(table_ref, 'quoted_identifier') for table_ref in table_references]
+        tables_references = crawl_dict_recursive(sql_parsed, 'table_reference')
+        tables_naked = [crawl_dict_recursive(table_ref, 'naked_identifier') for table_ref in tables_references]
+        tables_quoted = [crawl_dict_recursive(table_ref, 'quoted_identifier') for table_ref in tables_references]
         tables_identifiers = tables_naked + tables_quoted
         tables_cleaned = ['.'.join(table).replace('"', '').lower()
                           for table in tables_identifiers
