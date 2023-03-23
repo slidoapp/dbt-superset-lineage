@@ -103,7 +103,7 @@ def get_dashboards_from_superset(superset, superset_url, superset_db_id):
     logging.info("Getting published dashboards from Superset.")
     page_number = 0
     dashboards_id = []
-    if page_number < 5:
+    while True:
         logging.info("Getting page %d.", page_number + 1)
 
         payload = {
@@ -121,7 +121,7 @@ def get_dashboards_from_superset(superset, superset_url, superset_db_id):
                     dashboards_id.append(r['id'])
             page_number += 1
         else:
-            pass
+            break
 
     assert dashboards_id, "There are no published dashboards in Superset!"
 
