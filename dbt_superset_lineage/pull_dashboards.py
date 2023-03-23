@@ -12,6 +12,20 @@ logging.basicConfig(level=logging.INFO)
 logging.getLogger('sqlfluff').setLevel(level=logging.WARNING)
 
 
+def crawl_dict_recursive(d, key):
+    results = []
+    if isinstance(d, dict):
+        for k, v in d.items():
+            if k == key:
+                results.append(v)
+            else:
+                results.extend(crawl_dict_recursive(v, key))
+    elif isinstance(d, list):
+        for item in d:
+            results.extend(crawl_dict_recursive(item, key))
+    return results
+
+
 def get_tables_from_sql_simple(sql):
     sql = re.sub(r'(--.*)|(#.*)', '', sql)  # remove line comments
     sql = re.sub(r'\s+', ' ', sql).lower()  # make it one line
@@ -31,9 +45,12 @@ def get_tables_from_sql_simple(sql):
 def get_tables_from_sql(sql, dialect):
     try:
         sql_parsed = sqlfluff.parse(sql, dialect=dialect)
-        tables_raw = [table.raw for table in sql_parsed.tree.recursive_crawl('table_reference')]
-        tables_cleaned = ['.'.join(table.replace('"', '').lower().split('.')[-2:]) for table in
-                          tables_raw]  # full name if with schema
+        table_references = crawl_dict_recursive(sql_parsed, 'table_reference')
+        tables_naked = [crawl_dict_recursive(table_ref, 'naked_identifier') for table_ref in table_references]
+        tables_quoted = [crawl_dict_recursive(table_ref, 'quoted_identifier') for table_ref in table_references]
+        tables_identifiers = tables_naked + tables_quoted
+        tables_cleaned = ['.'.join(table).replace('"', '').lower() for table in tables_identifiers
+                          if len(table) >= 2]  # full name if with schema
     except (sqlfluff.core.errors.SQLParseError,
             sqlfluff.core.errors.SQLLexError,
             sqlfluff.api.simple.APIParsingError) as e:
@@ -86,7 +103,7 @@ def get_dashboards_from_superset(superset, superset_url, superset_db_id):
     logging.info("Getting published dashboards from Superset.")
     page_number = 0
     dashboards_id = []
-    while True:
+    if page_number < 5:
         logging.info("Getting page %d.", page_number + 1)
 
         payload = {
@@ -104,7 +121,7 @@ def get_dashboards_from_superset(superset, superset_url, superset_db_id):
                     dashboards_id.append(r['id'])
             page_number += 1
         else:
-            break
+            pass
 
     assert dashboards_id, "There are no published dashboards in Superset!"
 
