@@ -49,7 +49,8 @@ def get_tables_from_sql(sql, dialect):
         tables_naked = [crawl_dict_recursive(table_ref, 'naked_identifier') for table_ref in table_references]
         tables_quoted = [crawl_dict_recursive(table_ref, 'quoted_identifier') for table_ref in table_references]
         tables_identifiers = tables_naked + tables_quoted
-        tables_cleaned = ['.'.join(table).replace('"', '').lower() for table in tables_identifiers
+        tables_cleaned = ['.'.join(table).replace('"', '').lower()
+                          for table in tables_identifiers
                           if len(table) >= 2]  # full name if with schema
     except (sqlfluff.core.errors.SQLParseError,
             sqlfluff.core.errors.SQLLexError,
