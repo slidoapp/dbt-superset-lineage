@@ -3,6 +3,7 @@ import logging
 import re
 
 from pathlib import Path
+from requests import HTTPError
 import ruamel.yaml
 import sqlfluff
 
@@ -113,40 +114,44 @@ def get_dashboards_from_superset(superset, superset_url, superset_db_id):
     dashboards = []
     dashboards_datasets_w_db = set()
     for i, d in enumerate(dashboards_id):
-        logging.info("Getting info for dashboard %d/%d.", i + 1, len(dashboards_id))
-        res = superset.request('GET', f'/dashboard/{d}')
-        result = res['result']
+        try:
+            logging.info("Getting info for dashboard %d/%d.", i + 1, len(dashboards_id))
+            res_dashboard = superset.request('GET', f'/dashboard/{d}')
+            result_dashboard = res_dashboard['result']
 
-        dashboard_id = result['id']
-        title = result['dashboard_title']
-        url = superset_url + '/superset/dashboard/' + str(dashboard_id)
-        owner_name = result['owners'][0]['first_name'] + ' ' + result['owners'][0]['last_name']
+            dashboard_id = result_dashboard['id']
+            title = result_dashboard['dashboard_title']
+            url = superset_url + '/superset/dashboard/' + str(dashboard_id)
+            owner_name = result_dashboard['owners'][0]['first_name'] + ' ' + result_dashboard['owners'][0]['last_name']
 
-        # take unique dataset names, formatted as "[database].[schema].[table]" by Superset
-        datasets_raw = list(set(result['table_names'].split(', ')))
+            logging.info("Getting info about dashboard's datasets.")
+            res_datasets = superset.request('GET', f'/dashboard/{d}/datasets')
+            result_datasets = res_datasets['result']
 
-        # parse dataset names into parts
-        datasets_parsed = [dataset[1:-1].split('].[', maxsplit=2) for dataset in datasets_raw]
-        datasets_parsed = [[dataset[0], 'None', dataset[1]]  # add None in the middle
-                           if len(dataset) == 2 else dataset  # if missing the schema
-                           for dataset in datasets_parsed]
+            # parse dataset names split into parts
+            datasets_parsed = [[dataset['database']['name'], dataset['schema'], dataset['table_name']]
+                               for dataset in result_datasets]
+            datasets_parsed = [['None' if x is None else x for x in dataset]
+                               for dataset in datasets_parsed]  # replace None with string "None" if something missing
 
-        # put them all back together to get "database.schema.table"
-        datasets_w_db = ['.'.join(dataset) for dataset in datasets_parsed]
-        dashboards_datasets_w_db.update(datasets_w_db)
+            # put them all together to get "database.schema.table"
+            datasets_w_db = ['.'.join(dataset) for dataset in datasets_parsed]
+            dashboards_datasets_w_db.update(datasets_w_db)
 
-        # skip database, i.e. first item, to get only "schema.table"
-        datasets_wo_db = ['.'.join(dataset[1:]) for dataset in datasets_parsed]
+            # skip database, i.e. first item, to get only "schema.table"
+            datasets_wo_db = ['.'.join(dataset[1:]) for dataset in datasets_parsed]
 
-        dashboard = {
-            'id': dashboard_id,
-            'title': title,
-            'url': url,
-            'owner_name': owner_name,
-            'owner_email': '',  # required for dbt to accept owner_name but not in response
-            'datasets': datasets_wo_db  # add in "schema.table" format
-        }
-        dashboards.append(dashboard)
+            dashboard = {
+                'id': dashboard_id,
+                'title': title,
+                'url': url,
+                'owner_name': owner_name,
+                'owner_email': '',  # required for dbt to accept owner_name but not in response
+                'datasets': datasets_wo_db  # add in "schema.table" format
+            }
+            dashboards.append(dashboard)
+        except HTTPError as e:
+            logging.error("The dashboard with ID=%d wasn't updated. Check the error below.", d, exc_info=e)
 
     # test if unique when database disregarded
     # loop to get the name of duplicated dataset and work with unique set of datasets w db
