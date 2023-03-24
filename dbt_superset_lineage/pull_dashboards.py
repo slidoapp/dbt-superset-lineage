@@ -13,6 +13,33 @@ logging.basicConfig(level=logging.INFO)
 logging.getLogger('sqlfluff').setLevel(level=logging.WARNING)
 
 
+def crawl_recursive(seq, key):
+    if isinstance(seq, dict):
+        for k, v in seq.items():
+            if k == key:
+                yield v
+            else:
+                yield from crawl_recursive(v, key)
+    elif isinstance(seq, list):
+        for i in seq:
+            yield from crawl_recursive(i, key)
+
+
+def get_tables_from_sql_fluff(sql, dialect):
+    sql_parsed = sqlfluff.parse(sql=sql, dialect=dialect)
+    tables_references = crawl_recursive(sql_parsed, 'table_reference')
+
+    tables = set()  # to avoid duplicates
+    for identifier in ['naked_identifier', 'quoted_identifier']:
+        tables_parsed = [list(crawl_recursive(table_ref, identifier)) for table_ref in tables_references]
+        tables_cleaned = ['.'.join(table).replace('"', '').lower()
+                          for table in tables_parsed
+                          if len(table) >= 2]  # full name if with schema
+        tables.update(tables_cleaned)
+
+    return tables
+
+
 def get_tables_from_sql_simple(sql):
     sql = re.sub(r'(--.*)|(#.*)', '', sql)  # remove line comments
     sql = re.sub(r'\s+', ' ', sql).lower()  # make it one line
@@ -23,18 +50,14 @@ def get_tables_from_sql_simple(sql):
     tables = [table[2] + '.' + table[4] if table[2] != '' else table[4]  # full name if with schema
               for table in tables_match
               if table[4] != 'unnest']  # remove false positive
-
-    tables = list(set(tables))  # remove duplicates
+    tables = set(tables)  # remove duplicates
 
     return tables
 
 
 def get_tables_from_sql(sql, dialect):
     try:
-        sql_parsed = sqlfluff.parse(sql, dialect=dialect)
-        tables_raw = [table.raw for table in sql_parsed.tree.recursive_crawl('table_reference')]
-        tables_cleaned = ['.'.join(table.replace('"', '').lower().split('.')[-2:]) for table in
-                          tables_raw]  # full name if with schema
+        tables = get_tables_from_sql_fluff(sql=sql, dialect=dialect)
     except (sqlfluff.core.errors.SQLParseError,
             sqlfluff.core.errors.SQLLexError,
             sqlfluff.api.simple.APIParsingError) as e:
@@ -42,9 +65,9 @@ def get_tables_from_sql(sql, dialect):
                         "Let me attempt this via regular expressions at least and "
                         "check the problematic query and error below.\n%s",
                         sql, exc_info=e)
-        tables_cleaned = get_tables_from_sql_simple(sql)
+        tables = get_tables_from_sql_simple(sql)
 
-    tables = list(set(tables_cleaned))
+    tables = list(tables)  # turn set back into list
 
     return tables
 
