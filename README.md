@@ -14,13 +14,13 @@ _Make [dbt](https://github.com/dbt-labs/dbt) docs and [Apache Superset](https://
 Odds are rather high that you use dbt together with a visualisation tool. If so, these questions might have popped
 into your head time to time:
 - "Could I get rid of this model? Does it get used for some dashboards? And in which ones, if yes?"
-- "It would be so handy to see all these well-maintained column descriptions when exploring and creating charts."
+- "It would be so handy to see all these well-maintained model and column descriptions when exploring and creating charts."
 
 In case your visualisation tool of choice is Supserset, you are in luck!
 
 Using `dbt-superset-lineage`, you can:
 - Add dependencies of Superset dashboards to your dbt sources and models
-- Sync column descriptions from dbt docs to Superset
+- Sync model and column descriptions from dbt docs to Superset
 
 This will help you:
 - Avoid broken dashboards because of deprecated or changed models
@@ -77,11 +77,11 @@ $ dbt docs serve # Serve dbt docs
 ![Referenced exposure in dbt docs](assets/exposures_2.png)
 
 ### Push descriptions
-Push column descriptions from your dbt docs to Superset as plain text so that they could be viewed
+Push model and column descriptions from your dbt docs to Superset as plain text so that they could be viewed
 in Superset when creating charts.
 
 **N.B.**:
-- Run carefully as this rewrites your datasets using merged column metadata from Superset and dbt docs.
+- Run carefully as this rewrites your datasets using merged metadata from Superset and dbt docs.
 - Descriptions are rendered as plain text, hence no markdown syntax, incl. links, will be displayed.
 - Avoid special characters and strings in your dbt docs, e.g. `→` or `<null>`.
 

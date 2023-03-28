@@ -79,6 +79,7 @@ def get_tables_from_dbt(dbt_manifest, dbt_db_name):
 
             table_key_short = schema + '.' + name
             columns = table['columns']
+            description = table['description']
 
             if dbt_db_name is None or database == dbt_db_name:
                 # fail if it breaks uniqueness constraint
@@ -88,7 +89,7 @@ def get_tables_from_dbt(dbt_manifest, dbt_db_name):
                     "This would result in incorrect matching between Superset and dbt. " \
                     "To fix this, remove duplicates or add the ``dbt_db_name`` argument."
 
-                tables[table_key_short] = {'columns': columns}
+                tables[table_key_short] = {'columns': columns, 'description': description}
 
     assert tables, "Manifest is empty!"
 
@@ -102,9 +103,13 @@ def refresh_columns_in_superset(superset, dataset_id):
 
 def add_superset_columns(superset, dataset):
     logging.info("Pulling fresh columns info from Superset.")
+
     res = superset.request('GET', f"/dataset/{dataset['id']}")
-    columns = res['result']['columns']
-    dataset['columns'] = columns
+    result = res['result']
+
+    dataset['columns'] = result['columns']
+    dataset['description'] = result['description']
+
     return dataset
 
 
@@ -143,6 +148,9 @@ def merge_columns_info(dataset, tables):
     sst_columns = dataset['columns']
     dbt_columns = tables.get(key, {}).get('columns', {})
 
+    sst_description = dataset['description']
+    dbt_description = tables.get(key, {}).get('description')
+
     columns_new = []
     for sst_column in sst_columns:
 
@@ -169,13 +177,18 @@ def merge_columns_info(dataset, tables):
 
     dataset['columns_new'] = columns_new
 
+    if dbt_description is None:
+        dataset['description'] = sst_description
+    else:
+        dataset['description'] = dbt_description
+
     return dataset
 
 
-def put_columns_to_superset(superset, dataset):
-    logging.info("Putting new columns info with descriptions back into Superset.")
+def put_descriptions_to_superset(superset, dataset):
+    logging.info("Putting model and column descriptions into Superset.")
 
-    payload = {'columns': dataset['columns_new']}
+    payload = {'description': dataset['description'], 'columns': dataset['columns_new']}
     superset.request('PUT', f"/dataset/{dataset['id']}?override_columns=true", json=payload)
 
 
@@ -210,7 +223,7 @@ def main(dbt_project_dir, dbt_db_name,
                 refresh_columns_in_superset(superset, sst_dataset_id)
             sst_dataset_w_cols = add_superset_columns(superset, sst_dataset)
             sst_dataset_w_cols_new = merge_columns_info(sst_dataset_w_cols, dbt_tables)
-            put_columns_to_superset(superset, sst_dataset_w_cols_new)
+            put_descriptions_to_superset(superset, sst_dataset_w_cols_new)
         except HTTPError as e:
             logging.error("The dataset with ID=%d wasn't updated. Check the error below.",
                           sst_dataset_id, exc_info=e)
