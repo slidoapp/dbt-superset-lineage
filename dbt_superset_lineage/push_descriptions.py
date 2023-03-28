@@ -149,7 +149,7 @@ def merge_columns_info(dataset, tables):
     dbt_columns = tables.get(key, {}).get('columns', {})
 
     sst_description = dataset['description']
-    dbt_description = tables.get(key, {}).get('description', '')
+    dbt_description = tables.get(key, {}).get('description')
 
     columns_new = []
     for sst_column in sst_columns:
@@ -177,7 +177,7 @@ def merge_columns_info(dataset, tables):
 
     dataset['columns_new'] = columns_new
 
-    if dbt_description == '':
+    if dbt_description is None:
         dataset['description'] = sst_description
     else:
         dataset['description'] = dbt_description
