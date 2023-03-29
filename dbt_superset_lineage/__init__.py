@@ -9,7 +9,7 @@ app = typer.Typer()
 def pull_dashboards(dbt_project_dir: str = typer.Option('.', help="Directory path to dbt project."),
                     exposures_path: str = typer.Option('/models/exposures/superset_dashboards.yml',
                                                        help="Where within PROJECT_DIR the exposure file should "
-                                                            "be stored. If you set this to go outside /models, it then"
+                                                            "be stored. If you set this to go outside /models, it then "
                                                             "needs to be added to source-paths in dbt_project.yml."),
                     dbt_db_name: str = typer.Option(None, help="Name of your database within dbt towards which "
                                                                "the pull should be reduced to run."),
