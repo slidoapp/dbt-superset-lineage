@@ -165,7 +165,8 @@ def merge_columns_info(dataset, tables):
         # add description
         if column_name in dbt_columns \
                 and 'description' in dbt_columns[column_name] \
-                and sst_column['expression'] is None:  # database columns
+                and (sst_column['expression'] is None  # database columns
+                     or sst_column['expression'] == ''):
             description = dbt_columns[column_name]['description']
             description = convert_markdown_to_plain_text(description)
         else:
