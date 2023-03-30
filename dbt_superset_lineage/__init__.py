@@ -19,8 +19,7 @@ def pull_dashboards(dbt_project_dir: str = typer.Option('.', help="Directory pat
                                                                   "the pull should be reduced to run."),
                     sql_dialect: str = typer.Option('ansi', help="Database SQL dialect; used for parsing queries. "
                                                                  "Consult docs of SQLFluff for details: "
-                                                                 "https://docs.sqlfluff.com/en/stable/dialects.html?"
-                                                                 "highlight=ansi#dialects-reference"),
+                                                                 "https://docs.sqlfluff.com/en/stable/dialects.html"),
                     superset_access_token: str = typer.Option(None, envvar="SUPERSET_ACCESS_TOKEN",
                                                               help="Access token to Superset API. "
                                                                    "Can be automatically generated if "
