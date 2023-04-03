@@ -186,11 +186,29 @@ def merge_columns_info(dataset, tables):
     return dataset
 
 
+def check_lists_not_equal(lst1, lst2):
+    return sorted(json.dumps(d, sort_keys=True) for d in lst1) != sorted(json.dumps(d, sort_keys=True) for d in lst2)
+
+
 def put_descriptions_to_superset(superset, dataset):
     logging.info("Putting model and column descriptions into Superset.")
 
-    payload = {'description': dataset['description'], 'columns': dataset['columns_new']}
-    superset.request('PUT', f"/dataset/{dataset['id']}?override_columns=true", json=payload)
+    description_new = dataset['description_new']
+    columns_new = dataset['columns_new']
+
+    description_old = dataset['description']
+    columns_old = [{
+        'column_name': col['column_name'],
+        'id': col['id'],
+        'description': col['description']
+    } for col in dataset['columns']]
+
+    if description_new != description_old or \
+       check_lists_not_equal(columns_new, columns_old):
+        payload = {'description': description_new, 'columns': columns_new}
+        superset.request('PUT', f"/dataset/{dataset['id']}?override_columns=true", json=payload)
+    else:
+        logging.info("Skipping PUT execute request as nothing would be updated.")
 
 
 def main(dbt_project_dir, dbt_db_name,
@@ -216,8 +234,11 @@ def main(dbt_project_dir, dbt_db_name,
 
     dbt_tables = get_tables_from_dbt(dbt_manifest, dbt_db_name)
 
-    for i, sst_dataset in enumerate(sst_datasets):
-        logging.info("Processing dataset %d/%d.", i + 1, len(sst_datasets))
+    sst_datasets_dbt_filtered = [d for d in sst_datasets if d["key"] in dbt_tables]
+    logging.info("There are %d physical datasets in Superset with a match in dbt.", len(sst_datasets_dbt_filtered))
+
+    for i, sst_dataset in enumerate(sst_datasets_dbt_filtered):
+        logging.info("Processing dataset %d/%d.", i + 1, len(sst_datasets_dbt_filtered))
         sst_dataset_id = sst_dataset['id']
         try:
             if superset_refresh_columns:
