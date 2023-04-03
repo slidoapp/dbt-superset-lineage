@@ -8,7 +8,7 @@ from requests import HTTPError
 
 from .superset_api import Superset
 
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelprefix)s %(message)s', level=logging.INFO)
+logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 
 def get_datasets_from_superset(superset, superset_db_id):

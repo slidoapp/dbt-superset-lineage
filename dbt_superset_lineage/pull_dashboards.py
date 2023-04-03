@@ -9,7 +9,7 @@ import sqlfluff
 
 from .superset_api import Superset
 
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelprefix)s %(message)s, level=logging.INFO)
+logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
 logging.getLogger('sqlfluff').setLevel(level=logging.WARNING)
 
 
