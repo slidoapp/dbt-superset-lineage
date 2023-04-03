@@ -162,7 +162,7 @@ def merge_columns_info(dataset, tables):
             'id': sst_column['id']
         }
 
-        # add description
+        # add column descriptions
         if column_name in dbt_columns \
                 and 'description' in dbt_columns[column_name] \
                 and (sst_column['expression'] is None  # database columns
@@ -177,10 +177,11 @@ def merge_columns_info(dataset, tables):
 
     dataset['columns_new'] = columns_new
 
+    # add dataset description
     if dbt_description is None:
-        dataset['description'] = sst_description
+        dataset['description_new'] = sst_description
     else:
-        dataset['description'] = dbt_description
+        dataset['description_new'] = convert_markdown_to_plain_text(dbt_description)
 
     return dataset
 
