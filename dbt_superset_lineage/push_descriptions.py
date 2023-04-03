@@ -186,8 +186,8 @@ def merge_columns_info(dataset, tables):
     return dataset
 
 
-def check_lists_not_equal(lst1, lst2):
-    return sorted(json.dumps(d, sort_keys=True) for d in lst1) != sorted(json.dumps(d, sort_keys=True) for d in lst2)
+def check_columns_equal(lst1, lst2):
+    return sorted(lst1, key=lambda c: c["id"]) == sorted(lst2, key=lambda c: c["id"])
 
 
 def put_descriptions_to_superset(superset, dataset):
@@ -204,7 +204,7 @@ def put_descriptions_to_superset(superset, dataset):
     } for col in dataset['columns']]
 
     if description_new != description_old or \
-       check_lists_not_equal(columns_new, columns_old):
+       not check_columns_equal(columns_new, columns_old):
         payload = {'description': description_new, 'columns': columns_new}
         superset.request('PUT', f"/dataset/{dataset['id']}?override_columns=true", json=payload)
     else:
