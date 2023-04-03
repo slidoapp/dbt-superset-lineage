@@ -8,7 +8,7 @@ from requests import HTTPError
 
 from .superset_api import Superset
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 
 
 def get_datasets_from_superset(superset, superset_db_id):
@@ -208,7 +208,7 @@ def main(dbt_project_dir, dbt_db_name,
     logging.info("Starting the script!")
 
     sst_datasets = get_datasets_from_superset(superset, superset_db_id)
-    logging.info("There are %d physical datasets in Superset.", len(sst_datasets))
+    logging.info("There are %d physical datasets in Superset overall.", len(sst_datasets))
 
     with open(f'{dbt_project_dir}/target/manifest.json') as f:
         dbt_manifest = json.load(f)

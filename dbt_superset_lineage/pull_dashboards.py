@@ -9,7 +9,7 @@ import sqlfluff
 
 from .superset_api import Superset
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 logging.getLogger('sqlfluff').setLevel(level=logging.WARNING)
 
 
@@ -173,7 +173,8 @@ def get_dashboards_from_superset(superset, superset_url, superset_db_id):
             }
             dashboards.append(dashboard)
         except HTTPError as e:
-            logging.error("The dashboard with ID=%d wasn't updated. Check the error below.", d, exc_info=e)
+            logging.error("Info about the dashboard with ID=%d wasn't (fully) obtained. "
+                          "Check the error below.", d, exc_info=e)
 
     # test if unique when database disregarded
     # loop to get the name of duplicated dataset and work with unique set of datasets w db
