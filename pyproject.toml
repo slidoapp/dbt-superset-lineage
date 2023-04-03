@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "dbt-superset-lineage"
-version = "0.2.1"
+version = "0.3.0"
 description = "Make dbt docs and Apache Superset talk to one another"
 authors = ["Michal Kolacek <mkolacek@slido.com>"]
 readme = "README.md"
