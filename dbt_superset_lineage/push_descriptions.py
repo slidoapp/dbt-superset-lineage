@@ -8,7 +8,7 @@ from requests import HTTPError
 
 from .superset_api import Superset
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelprefix)s %(message)s', level=logging.INFO)
 
 
 def get_datasets_from_superset(superset, superset_db_id):
@@ -162,10 +162,11 @@ def merge_columns_info(dataset, tables):
             'id': sst_column['id']
         }
 
-        # add description
+        # add column descriptions
         if column_name in dbt_columns \
                 and 'description' in dbt_columns[column_name] \
-                and sst_column['expression'] == '':  # database columns
+                and (sst_column['expression'] is None  # database columns
+                     or sst_column['expression'] == ''):
             description = dbt_columns[column_name]['description']
             description = convert_markdown_to_plain_text(description)
         else:
@@ -176,19 +177,38 @@ def merge_columns_info(dataset, tables):
 
     dataset['columns_new'] = columns_new
 
+    # add dataset description
     if dbt_description is None:
-        dataset['description'] = sst_description
+        dataset['description_new'] = sst_description
     else:
-        dataset['description'] = dbt_description
+        dataset['description_new'] = convert_markdown_to_plain_text(dbt_description)
 
     return dataset
+
+
+def check_columns_equal(lst1, lst2):
+    return sorted(lst1, key=lambda c: c["id"]) == sorted(lst2, key=lambda c: c["id"])
 
 
 def put_descriptions_to_superset(superset, dataset):
     logging.info("Putting model and column descriptions into Superset.")
 
-    payload = {'description': dataset['description'], 'columns': dataset['columns_new']}
-    superset.request('PUT', f"/dataset/{dataset['id']}?override_columns=true", json=payload)
+    description_new = dataset['description_new']
+    columns_new = dataset['columns_new']
+
+    description_old = dataset['description']
+    columns_old = [{
+        'column_name': col['column_name'],
+        'id': col['id'],
+        'description': col['description']
+    } for col in dataset['columns']]
+
+    if description_new != description_old or \
+       not check_columns_equal(columns_new, columns_old):
+        payload = {'description': description_new, 'columns': columns_new}
+        superset.request('PUT', f"/dataset/{dataset['id']}?override_columns=true", json=payload)
+    else:
+        logging.info("Skipping PUT execute request as nothing would be updated.")
 
 
 def main(dbt_project_dir, dbt_db_name,
@@ -207,15 +227,18 @@ def main(dbt_project_dir, dbt_db_name,
     logging.info("Starting the script!")
 
     sst_datasets = get_datasets_from_superset(superset, superset_db_id)
-    logging.info("There are %d physical datasets in Superset.", len(sst_datasets))
+    logging.info("There are %d physical datasets in Superset overall.", len(sst_datasets))
 
     with open(f'{dbt_project_dir}/target/manifest.json') as f:
         dbt_manifest = json.load(f)
 
     dbt_tables = get_tables_from_dbt(dbt_manifest, dbt_db_name)
 
-    for i, sst_dataset in enumerate(sst_datasets):
-        logging.info("Processing dataset %d/%d.", i + 1, len(sst_datasets))
+    sst_datasets_dbt_filtered = [d for d in sst_datasets if d["key"] in dbt_tables]
+    logging.info("There are %d physical datasets in Superset with a match in dbt.", len(sst_datasets_dbt_filtered))
+
+    for i, sst_dataset in enumerate(sst_datasets_dbt_filtered):
+        logging.info("Processing dataset %d/%d.", i + 1, len(sst_datasets_dbt_filtered))
         sst_dataset_id = sst_dataset['id']
         try:
             if superset_refresh_columns:

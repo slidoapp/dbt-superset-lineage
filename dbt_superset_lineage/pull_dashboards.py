@@ -9,7 +9,7 @@ import sqlfluff
 
 from .superset_api import Superset
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelprefix)s %(message)s, level=logging.INFO)
 logging.getLogger('sqlfluff').setLevel(level=logging.WARNING)
 
 
@@ -169,12 +169,12 @@ def get_dashboards_from_superset(superset, superset_url, superset_db_id):
                 'title': title,
                 'url': url,
                 'owner_name': owner_name,
-                'owner_email': '',  # required for dbt to accept owner_name but not in response
                 'datasets': datasets_wo_db  # add in "schema.table" format
             }
             dashboards.append(dashboard)
         except HTTPError as e:
-            logging.error("The dashboard with ID=%d wasn't updated. Check the error below.", d, exc_info=e)
+            logging.error("Info about the dashboard with ID=%d wasn't (fully) obtained. "
+                          "Check the error below.", d, exc_info=e)
 
     # test if unique when database disregarded
     # loop to get the name of duplicated dataset and work with unique set of datasets w db
@@ -269,9 +269,9 @@ def get_exposures_dict(dashboards, exposures):
 
     exposures_orig = {exposure['url']: exposure for exposure in exposures}
     exposures_dict = [{
-        # remove non-word characters (unless it's space) and replace spaces with underscores
+        # remove non-word characters (unless it's space), replace spaces with underscores, make lowercase
         # required since dbt v1.3
-        'name': re.sub(r'[^\w ]+', '', dashboard['title']).replace(' ', '_'),
+        'name': re.sub(r'[^\w ]+', '', dashboard['title']).replace(' ', '_').lower(),
         'label': dashboard['title'],
         'type': 'dashboard',
         'url': dashboard['url'],
@@ -280,7 +280,7 @@ def get_exposures_dict(dashboards, exposures):
         'depends_on': dashboard['refs'],
         'owner': {
             'name': dashboard['owner_name'],
-            'email': dashboard['owner_email']
+            'email': ''  # required for dbt to accept owner.name but not in response
         }
     } for dashboard in dashboards]
 
