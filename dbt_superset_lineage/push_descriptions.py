@@ -206,7 +206,7 @@ def put_descriptions_to_superset(superset, dataset):
     if description_new != description_old or \
        not check_columns_equal(columns_new, columns_old):
         payload = {'description': description_new, 'columns': columns_new}
-        superset.request('PUT', f"/dataset/{dataset['id']}?override_columns=true", json=payload)
+        superset.request('PUT', f"/dataset/{dataset['id']}?override_columns=false", json=payload)
     else:
         logging.info("Skipping PUT execute request as nothing would be updated.")
 
