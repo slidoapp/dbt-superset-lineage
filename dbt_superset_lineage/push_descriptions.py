@@ -186,7 +186,7 @@ def merge_columns_info(dataset, tables):
     else:
         dataset['description_new'] = convert_markdown_to_plain_text(dbt_description)
 
-    # add dataset owner IDs
+    # add dataset owner IDs (otherwise Superset empties the owners list)
     dataset['owners_new'] = [owner['id'] for owner in sst_owners]
 
     return dataset
