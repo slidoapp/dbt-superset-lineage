@@ -109,6 +109,7 @@ def add_superset_columns(superset, dataset):
 
     dataset['columns'] = result['columns']
     dataset['description'] = result['description']
+    dataset['owners'] = result['owners']
 
     return dataset
 
@@ -151,6 +152,8 @@ def merge_columns_info(dataset, tables):
     sst_description = dataset['description']
     dbt_description = tables.get(key, {}).get('description')
 
+    sst_owners = dataset['owners']
+
     columns_new = []
     for sst_column in sst_columns:
 
@@ -183,6 +186,9 @@ def merge_columns_info(dataset, tables):
     else:
         dataset['description_new'] = convert_markdown_to_plain_text(dbt_description)
 
+    # add dataset owner IDs (otherwise Superset empties the owners list)
+    dataset['owners_new'] = [owner['id'] for owner in sst_owners]
+
     return dataset
 
 
@@ -195,6 +201,7 @@ def put_descriptions_to_superset(superset, dataset):
 
     description_new = dataset['description_new']
     columns_new = dataset['columns_new']
+    owners_new = dataset['owners_new']
 
     description_old = dataset['description']
     columns_old = [{
@@ -205,7 +212,7 @@ def put_descriptions_to_superset(superset, dataset):
 
     if description_new != description_old or \
        not check_columns_equal(columns_new, columns_old):
-        payload = {'description': description_new, 'columns': columns_new}
+        payload = {'description': description_new, 'columns': columns_new, 'owners': owners_new}
         superset.request('PUT', f"/dataset/{dataset['id']}?override_columns=false", json=payload)
     else:
         logging.info("Skipping PUT execute request as nothing would be updated.")
