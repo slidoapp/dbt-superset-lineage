@@ -81,6 +81,8 @@ in Superset when creating charts.
 
 **N.B.**:
 - Run carefully as this rewrites your datasets using merged metadata from Superset and dbt docs.
+- Running with `--superset-refresh-columns` overrides `columns.filterable` and `columns.groupby` to `true`,
+  because of [this issue](https://github.com/apache/superset/issues/24136).
 - Descriptions are rendered as plain text, hence no markdown syntax, incl. links, will be displayed.
 - Avoid special characters and strings in your dbt docs, e.g. `→` or `<null>`.
 
