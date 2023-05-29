@@ -43,6 +43,11 @@ def push_descriptions(dbt_project_dir: str = typer.Option('.', help="Directory p
                       superset_refresh_columns: bool = typer.Option(False, help="Whether columns in Superset should be "
                                                                                 "refreshed from database before "
                                                                                 "the push."),
+                      superset_pause_after_update: int = typer.Option(None, help="Number of seconds for which the "
+                                                                                 "script pauses after any update of "
+                                                                                 "Superset columns. This is to allow "
+                                                                                 "databases to catch up in "
+                                                                                 "the meantime."),
                       superset_access_token: str = typer.Option(None, envvar="SUPERSET_ACCESS_TOKEN",
                                                                 help="Access token to Superset API."
                                                                      "Can be automatically generated if "
@@ -51,7 +56,7 @@ def push_descriptions(dbt_project_dir: str = typer.Option('.', help="Directory p
                                                                  help="Refresh token to Superset API.")):
 
     push_descriptions_main(dbt_project_dir, dbt_db_name,
-                           superset_url, superset_db_id, superset_refresh_columns,
+                           superset_url, superset_db_id, superset_refresh_columns, superset_pause_after_update,
                            superset_access_token, superset_refresh_token)
 
 
