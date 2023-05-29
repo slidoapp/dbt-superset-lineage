@@ -197,14 +197,15 @@ def check_columns_equal(lst1, lst2):
     return sorted(lst1, key=lambda c: c["id"]) == sorted(lst2, key=lambda c: c["id"])
 
 
-def pause_after_put(superset_pause_after_put):
-    if superset_pause_after_put:
-        logging.info("Pausing the script for %d seconds to allow for databases to update.", superset_pause_after_put)
-        time.sleep(superset_pause_after_put)
+def pause_after_update(superset_pause_after_update):
+    if superset_pause_after_update:
+        logging.info("Pausing the script for %d seconds to allow for databases to catch up with the update.",
+                     superset_pause_after_update)
+        time.sleep(superset_pause_after_update)
         logging.info("Resuming the script again.")
 
 
-def put_descriptions_to_superset(superset, dataset, superset_pause_after_put):
+def put_descriptions_to_superset(superset, dataset, superset_pause_after_update):
     logging.info("Putting model and column descriptions into Superset.")
 
     description_new = dataset['description_new']
@@ -222,13 +223,13 @@ def put_descriptions_to_superset(superset, dataset, superset_pause_after_put):
        not check_columns_equal(columns_new, columns_old):
         payload = {'description': description_new, 'columns': columns_new, 'owners': owners_new}
         superset.request('PUT', f"/dataset/{dataset['id']}?override_columns=false", json=payload)
-        pause_after_put(superset_pause_after_put)
+        pause_after_update(superset_pause_after_update)
     else:
         logging.info("Skipping PUT execute request as nothing would be updated.")
 
 
 def main(dbt_project_dir, dbt_db_name,
-         superset_url, superset_db_id, superset_refresh_columns, superset_pause_after_put,
+         superset_url, superset_db_id, superset_refresh_columns, superset_pause_after_update,
          superset_access_token, superset_refresh_token):
 
     # require at least one token for Superset
@@ -259,10 +260,10 @@ def main(dbt_project_dir, dbt_db_name,
         try:
             if superset_refresh_columns:
                 refresh_columns_in_superset(superset, sst_dataset_id)
-                pause_after_put(superset_pause_after_put)
+                pause_after_update(superset_pause_after_update)
             sst_dataset_w_cols = add_superset_columns(superset, sst_dataset)
             sst_dataset_w_cols_new = merge_columns_info(sst_dataset_w_cols, dbt_tables)
-            put_descriptions_to_superset(superset, sst_dataset_w_cols_new, superset_pause_after_put)
+            put_descriptions_to_superset(superset, sst_dataset_w_cols_new, superset_pause_after_update)
         except HTTPError as e:
             logging.error("The dataset with ID=%d wasn't updated. Check the error below.",
                           sst_dataset_id, exc_info=e)
