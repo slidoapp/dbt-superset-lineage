@@ -20,7 +20,7 @@ bs4 = "^0.0.1"
 Markdown = "^3.3.6"
 
 [tool.poetry.dev-dependencies]
-pytest = "^5.2"
+pytest = "^7.4"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
