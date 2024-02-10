@@ -63,7 +63,7 @@ def get_datasets_from_superset(superset, superset_db_id):
             break
 
     assert datasets, "There are no datasets in Superset!"
-
+    
     return datasets
 
 
@@ -152,7 +152,9 @@ def merge_columns_info(dataset, tables):
 
     sst_description = dataset['description']
     dbt_description = tables.get(key, {}).get('description')
-
+    
+    
+    
     sst_owners = dataset['owners']
 
     columns_new = []
@@ -166,16 +168,31 @@ def merge_columns_info(dataset, tables):
             'id': sst_column['id']
         }
 
-        # add column descriptions
+        # add column descriptions and labels
         if column_name in dbt_columns \
                 and 'description' in dbt_columns[column_name] \
                 and (sst_column['expression'] is None  # database columns
                      or sst_column['expression'] == ''):
+            
             description = dbt_columns[column_name]['description']
             description = convert_markdown_to_plain_text(description)
+
+
+            # Check if label exists in dbt_columns            
+            if 'label' in dbt_columns[column_name]:                
+                label = dbt_columns[column_name]['label']
+                label = convert_markdown_to_plain_text(label)
+            else:
+                label = sst_column['verbose_name'] 
+                        
+            
         else:
             description = sst_column['description']
+            
+            
+        
         column_new['description'] = description
+        column_new['verbose_name'] = label
 
         columns_new.append(column_new)
 
