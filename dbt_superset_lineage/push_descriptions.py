@@ -178,13 +178,13 @@ def merge_columns_info(dataset, tables):
             description = convert_markdown_to_plain_text(description)
 
 
-            # Check if label exists in dbt_columns            
-            if 'label' in dbt_columns[column_name]:                
-                label = dbt_columns[column_name]['label']
+            # Check if 'meta' field exists in dbt_columns
+            if 'meta' in dbt_columns[column_name] and 'label' in dbt_columns[column_name]['meta']:
+                label = dbt_columns[column_name]['meta']['label']
                 label = convert_markdown_to_plain_text(label)
             else:
-                label = sst_column['verbose_name'] 
-                        
+                label = sst_column['verbose_name']
+            
             
         else:
             description = sst_column['description']
