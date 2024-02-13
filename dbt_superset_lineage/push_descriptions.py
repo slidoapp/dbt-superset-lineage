@@ -145,7 +145,7 @@ def convert_markdown_to_plain_text(md_string):
 
 def merge_columns_info(dataset, tables):
     logging.info("Merging columns info from Superset and manifest.json file.")
-
+    
     key = dataset['key']
     sst_columns = dataset['columns']
     dbt_columns = tables.get(key, {}).get('columns', {})
@@ -176,22 +176,22 @@ def merge_columns_info(dataset, tables):
             
             description = dbt_columns[column_name]['description']
             description = convert_markdown_to_plain_text(description)
-
-
-            # Check if 'meta' field exists in dbt_columns
-            if 'meta' in dbt_columns[column_name] and 'label' in dbt_columns[column_name]['meta']:
-                label = dbt_columns[column_name]['meta']['label']
-                label = convert_markdown_to_plain_text(label)
-            else:
-                label = sst_column['verbose_name']
-            
-            
         else:
             description = sst_column['description']
-            
-            
         
         column_new['description'] = description
+
+        # Check if 'meta' field exists in dbt_columns
+        if column_name in dbt_columns \
+            and 'meta' in dbt_columns[column_name] \
+            and 'label' in dbt_columns[column_name]['meta']:
+            label = dbt_columns[column_name]['meta']['label']
+            label = convert_markdown_to_plain_text(label)
+            
+        else:
+            label = sst_column['verbose_name']           
+        
+        
         column_new['verbose_name'] = label
 
         columns_new.append(column_new)
