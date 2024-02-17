@@ -187,8 +187,7 @@ def merge_columns_info(dataset, tables):
                     label = convert_markdown_to_plain_text(label)
                     
                 else:
-                    label = sst_column['verbose_name']           
-                
+                    label = sst_column['verbose_name']          
                 
                 column_new['verbose_name'] = label
 
