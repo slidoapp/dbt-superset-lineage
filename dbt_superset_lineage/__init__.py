@@ -34,6 +34,7 @@ def pull_dashboards(dbt_project_dir: str = typer.Option('.', help="Directory pat
 
 @app.command()
 def push_descriptions(dbt_project_dir: str = typer.Option('.', help="Directory path to dbt project."),
+                      manifest_path: str = typer.Option(None, help="File path to dbt manifest file."),
                       dbt_db_name: str = typer.Option(None, help="Name of your database within dbt to which the script "
                                                                  "should be reduced to run."),
                       superset_url: str = typer.Argument(..., help="URL of your Superset, e.g. "
@@ -57,7 +58,7 @@ def push_descriptions(dbt_project_dir: str = typer.Option('.', help="Directory p
 
     push_descriptions_main(dbt_project_dir, dbt_db_name,
                            superset_url, superset_db_id, superset_refresh_columns, superset_pause_after_update,
-                           superset_access_token, superset_refresh_token)
+                           superset_access_token, superset_refresh_token, manifest_path)
 
 
 if __name__ == '__main__':

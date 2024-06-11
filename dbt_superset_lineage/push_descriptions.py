@@ -230,7 +230,7 @@ def put_descriptions_to_superset(superset, dataset, superset_pause_after_update)
 
 def main(dbt_project_dir, dbt_db_name,
          superset_url, superset_db_id, superset_refresh_columns, superset_pause_after_update,
-         superset_access_token, superset_refresh_token):
+         superset_access_token, superset_refresh_token, manifest_path):
 
     # require at least one token for Superset
     assert superset_access_token is not None or superset_refresh_token is not None, \
@@ -245,9 +245,12 @@ def main(dbt_project_dir, dbt_db_name,
 
     sst_datasets = get_datasets_from_superset(superset, superset_db_id)
     logging.info("There are %d physical datasets in Superset overall.", len(sst_datasets))
-
-    with open(f'{dbt_project_dir}/target/manifest.json') as f:
-        dbt_manifest = json.load(f)
+    if manifest_path:
+        with open(manifest_path) as f:
+            dbt_manifest = json.load(f)
+    else:
+        with open(f'{dbt_project_dir}/target/manifest.json') as f:
+            dbt_manifest = json.load(f)
 
     dbt_tables = get_tables_from_dbt(dbt_manifest, dbt_db_name)
 
