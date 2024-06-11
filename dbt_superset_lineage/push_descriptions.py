@@ -78,7 +78,9 @@ def get_tables_from_dbt(dbt_manifest, dbt_db_name):
             schema = table['schema']
             database = table['database']
 
-            table_key_short = schema + '.' + name
+            #CG hack to avoid duplicate error
+            table_key_short = table_key_long
+            #table_key_short = schema + '.' + name
             columns = table['columns']
             description = table['description']
 
