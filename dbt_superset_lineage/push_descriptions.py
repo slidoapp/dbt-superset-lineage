@@ -67,7 +67,7 @@ def get_datasets_from_superset(superset, superset_db_id):
     return datasets
 
 
-def get_tables_from_dbt(dbt_manifest, dbt_db_name):
+def get_tables_from_dbt(dbt_manifest, dbt_db_name, dbt_schema_name):
     tables = {}
     for table_type in ['nodes', 'sources']:
         manifest_subset = dbt_manifest[table_type]
@@ -82,7 +82,12 @@ def get_tables_from_dbt(dbt_manifest, dbt_db_name):
             columns = table['columns']
             description = table['description']
 
-            if dbt_db_name is None or database == dbt_db_name:
+            should_add = (dbt_db_name is None or database == dbt_db_name) and (
+                dbt_schema_name is None or schema == dbt_schema_name
+            )
+
+            if should_add:
+                print(f"Pushing table {table_key_short} to tables")
                 # fail if it breaks uniqueness constraint
                 assert table_key_short not in tables, \
                     f"Table {table_key_short} is a duplicate name (schema + table) " \
@@ -228,7 +233,7 @@ def put_descriptions_to_superset(superset, dataset, superset_pause_after_update)
         logging.info("Skipping PUT execute request as nothing would be updated.")
 
 
-def main(dbt_project_dir, dbt_db_name,
+def main(dbt_project_dir, dbt_db_name, dbt_schema_name,
          superset_url, superset_db_id, superset_refresh_columns, superset_pause_after_update,
          superset_access_token, superset_refresh_token):
 
@@ -249,7 +254,7 @@ def main(dbt_project_dir, dbt_db_name,
     with open(f'{dbt_project_dir}/target/manifest.json') as f:
         dbt_manifest = json.load(f)
 
-    dbt_tables = get_tables_from_dbt(dbt_manifest, dbt_db_name)
+    dbt_tables = get_tables_from_dbt(dbt_manifest, dbt_db_name, dbt_schema_name)
 
     sst_datasets_dbt_filtered = [d for d in sst_datasets if d["key"] in dbt_tables]
     logging.info("There are %d physical datasets in Superset with a match in dbt.", len(sst_datasets_dbt_filtered))
