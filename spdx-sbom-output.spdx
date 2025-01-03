@@ -3,14 +3,14 @@
   "dataLicense": "CC0-1.0",
   "SPDXID": "SPDXRef-DOCUMENT",
   "name": ".",
-  "documentNamespace": "https://anchore.com/syft/dir/db3193b8-a609-49cb-bb9b-ff895fcb9e3e",
+  "documentNamespace": "https://anchore.com/syft/dir/f39af49c-ea1a-4bf3-b235-3bd2bfddd0c3",
   "creationInfo": {
     "licenseListVersion": "3.25",
     "creators": [
       "Organization: Anchore, Inc",
       "Tool: syft-1.18.1"
     ],
-    "created": "2025-01-03T16:10:21Z"
+    "created": "2025-01-03T16:17:19Z"
   },
   "packages": [
     {
@@ -2002,6 +2002,75 @@
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
           "referenceLocator": "pkg:pypi/exceptiongroup@1.1.3"
+        }
+      ]
+    },
+    {
+      "name": "googleapis/release-please-action",
+      "SPDXID": "SPDXRef-Package-github-action-googleapis-release-please-action-9bf9a789e3c8e053",
+      "versionInfo": "v4",
+      "supplier": "NOASSERTION",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "sourceInfo": "acquired package info from GitHub Actions workflow file or composite action file: /.github/workflows/release-please.yml",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:googleapis\\/release-please-action:googleapis\\/release-please-action:v4:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:googleapis\\/release-please-action:googleapis\\/release_please_action:v4:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:googleapis\\/release_please_action:googleapis\\/release-please-action:v4:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:googleapis\\/release_please_action:googleapis\\/release_please_action:v4:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:googleapis\\/release-please:googleapis\\/release-please-action:v4:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:googleapis\\/release-please:googleapis\\/release_please_action:v4:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:googleapis\\/release_please:googleapis\\/release-please-action:v4:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:googleapis\\/release_please:googleapis\\/release_please_action:v4:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:googleapis\\/release:googleapis\\/release-please-action:v4:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:googleapis\\/release:googleapis\\/release_please_action:v4:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/googleapis/release-please-action@v4"
         }
       ]
     },
@@ -7405,6 +7474,28 @@
       "copyrightText": "NOASSERTION"
     },
     {
+      "fileName": ".github/workflows/release-please.yml",
+      "SPDXID": "SPDXRef-File-.github-workflows-release-please.yml-d32325a1d771740e",
+      "fileTypes": [
+        "TEXT"
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "1edd0039c02e4602ff77428378cec5bf5c0db4db"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "58a637436e9879d03a5328c1ec1dc209518cc3183b72546d393c9a17ebe05ba3"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "licenseInfoInFiles": [
+        "NOASSERTION"
+      ],
+      "copyrightText": "NOASSERTION"
+    },
+    {
       "fileName": "poetry.lock",
       "SPDXID": "SPDXRef-File-poetry.lock-4490038dd0eaaf1f",
       "fileTypes": [
@@ -7988,6 +8079,12 @@
       "comment": "evident-by: indicates the package's existence is evident by the given file"
     },
     {
+      "spdxElementId": "SPDXRef-Package-github-action-googleapis-release-please-action-9bf9a789e3c8e053",
+      "relatedSpdxElement": "SPDXRef-File-.github-workflows-release-please.yml-d32325a1d771740e",
+      "relationshipType": "OTHER",
+      "comment": "evident-by: indicates the package's existence is evident by the given file"
+    },
+    {
       "spdxElementId": "SPDXRef-Package-python-zipp-9db612dc03f5b498",
       "relatedSpdxElement": "SPDXRef-File-resolved-requirements.txt-930c47522e81812d",
       "relationshipType": "OTHER",
@@ -8292,6 +8389,11 @@
     {
       "spdxElementId": "SPDXRef-DocumentRoot-Directory-.",
       "relatedSpdxElement": "SPDXRef-Package-python-exceptiongroup-56ec66bcddf96388",
+      "relationshipType": "CONTAINS"
+    },
+    {
+      "spdxElementId": "SPDXRef-DocumentRoot-Directory-.",
+      "relatedSpdxElement": "SPDXRef-Package-github-action-googleapis-release-please-action-9bf9a789e3c8e053",
       "relationshipType": "CONTAINS"
     },
     {
