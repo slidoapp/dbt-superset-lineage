@@ -1,0 +1,100 @@
+name: Generate and Commit SPDX SBOM
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  generate-sbom:
+    runs-on: ubuntu-latest
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head_ref || github.ref_name }}
+
+      # Step 2: Set up Python environment
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      # Step 3: Detect Dependency File
+      - name: Detect Dependency File
+        id: detect-deps
+        run: |
+          if [ -f "pyproject.toml" ]; then
+            echo "DEPENDENCY_FILE=pyproject.toml" >> $GITHUB_ENV
+            echo "DEPENDENCY_MANAGER=poetry" >> $GITHUB_ENV
+          elif [ -f "requirements.txt" ]; then
+            echo "DEPENDENCY_FILE=requirements.txt" >> $GITHUB_ENV
+            echo "DEPENDENCY_MANAGER=pip" >> $GITHUB_ENV
+          else
+            echo "No dependency file found. Exiting."
+            exit 1
+        shell: bash
+
+      # Step 4: Install Dependencies
+      - name: Install Dependencies
+        run: |
+          if [ "$DEPENDENCY_MANAGER" == "poetry" ]; then
+            pip install poetry
+            poetry install --no-root
+          elif [ "$DEPENDENCY_MANAGER" == "pip" ]; then
+            pip install -r requirements.txt
+          fi
+
+      # Step 5: Freeze Resolved Dependencies
+      - name: Freeze Dependencies
+        run: |
+          if [ "$DEPENDENCY_MANAGER" == "poetry" ]; then
+            poetry export --without-hashes --format=requirements.txt > resolved-requirements.txt
+          elif [ "$DEPENDENCY_MANAGER" == "pip" ]; then
+            pip freeze > resolved-requirements.txt
+          fi
+
+      # Step 6: Debug Resolved Dependencies
+      - name: Debug Resolved Requirements
+        run: cat resolved-requirements.txt
+
+      # Step 7: Install Syft and jq
+      - name: Install Syft and jq
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+          sudo apt-get update && sudo apt-get install -y jq
+
+      # Step 8: Generate SPDX SBOM with Pretty-Printed JSON
+      - name: Generate SPDX SBOM
+        run: syft dir:. -o spdx-json | jq '.' > spdx-sbom-output.spdx
+
+      # Step 9: Validate the Generated SBOM
+      - name: Debug Generated SBOM
+        run: |
+          if [ -s spdx-sbom-output.spdx ]; then
+            echo "SPDX SBOM successfully generated!"
+            cat spdx-sbom-output.spdx
+          else
+            echo "SPDX SBOM generation failed or file is empty."
+            exit 1
+          fi
+
+      # Step 10: Commit and Push SPDX SBOM
+      - name: Commit and Push SPDX SBOM
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git checkout ${{ github.head_ref || github.ref_name }}
+          git add spdx-sbom-output.spdx
+          git commit -m "docs: update spdx sbom" || echo "No changes to commit"
+          git push origin ${{ github.head_ref || github.ref_name }}
+
+      # Step 11: Upload SPDX SBOM as an Artifact
+      - name: Upload SPDX SBOM
+        uses: actions/upload-artifact@v3
+        with:
+          name: spdx-sbom
+          path: spdx-sbom-output.spdx
