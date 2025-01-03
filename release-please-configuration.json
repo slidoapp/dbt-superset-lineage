@@ -1,0 +1,29 @@
+{
+  "packages": {
+    ".": {
+      "release-type": "simple",
+      "extra-files": [
+        {
+          "type": "toml",
+          "path": "pyproject.toml",
+          "jsonpath": "$.tool.poetry.version"
+        }
+      ]
+    }
+  },
+  "include-v-in-tag": false,
+  "changelog-sections": [
+    {"type": "chore", "section": "🛠️ Chores", "hidden": false},
+    {"type": "ci", "section": "🎡 Continuous Integration", "hidden": false},
+    {"type": "docs", "section": "📚 Documentation", "hidden": false},
+    {"type": "feat", "section": "✨ Features", "hidden": false},
+    {"type": "fix", "section": "🐛 Bug Fixes", "hidden": false},
+    {"type": "perf", "section": "🚀 Performance Improvements", "hidden": false},
+    {"type": "refactor", "section": "🔨 Code Refactoring", "hidden": false},
+    {"type": "revert", "section": "⏪ Reverts", "hidden": false},
+    {"type": "style", "section": "🎨 Styling", "hidden": false},
+    {"type": "test", "section": "🧪 Tests", "hidden": false},
+    {"type": "security", "section": "🔒 Security", "hidden": false},
+    {"type": "config", "section": "⚙️ Configuration", "hidden": false}
+  ]
+}
