@@ -31,11 +31,18 @@ class Superset:
     def _headers(self, **headers):
         if self.access_token is None:
             return headers
+        
+        csrfTokenResponse = requests.request('GET', self.api_url + '/security/csrf_token/',headers={
+            'Authorization': f'Bearer {self.access_token}'
+        })
+
+        csrfToken = csrfTokenResponse.json()['result']
 
         return {
-            'Authorization': f'Bearer {self.access_token}',
-            **headers,
-        }
+            'X-CSRF-Token': csrfToken,
+            'Cookie' : csrfTokenResponse.headers['set-cookie'],
+            'Referer' : self.api_url,
+            'Authorization': f'Bearer {self.access_token}'        }
 
     def _refresh_access_token(self):
         logger.debug("Refreshing API token")
