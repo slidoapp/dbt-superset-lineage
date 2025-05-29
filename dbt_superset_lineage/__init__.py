@@ -1,3 +1,8 @@
+"""
+dbt-superset-lineage CLI
+"""
+__version__ = "0.3.5"
+
 import typer
 from .pull_dashboards import main as pull_dashboards_main
 from .push_descriptions import main as push_descriptions_main

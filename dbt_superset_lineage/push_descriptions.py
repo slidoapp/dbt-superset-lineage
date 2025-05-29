@@ -131,7 +131,7 @@ def convert_markdown_to_plain_text(md_string):
 
     # extract text
     soup = BeautifulSoup(html, 'html.parser')
-    text = ''.join(soup.findAll(text=True))
+    text = soup.get_text(separator=' ')
 
     # make one line
     single_line = re.sub(r'\s+', ' ', text)
@@ -144,53 +144,54 @@ def convert_markdown_to_plain_text(md_string):
 
 
 def merge_columns_info(dataset, tables):
-    logging.info("Merging columns info from Superset and manifest.json file.")
-
+    logging.info("Merging columns info for dataset %s.", dataset['key'])
     key = dataset['key']
     sst_columns = dataset['columns']
     dbt_columns = tables.get(key, {}).get('columns', {})
-
-    sst_description = dataset['description']
+    sst_description = dataset.get('description')
     dbt_description = tables.get(key, {}).get('description')
-
-    sst_owners = dataset['owners']
+    sst_owners = dataset.get('owners', [])
 
     columns_new = []
-    for sst_column in sst_columns:
+    for sst_col in sst_columns:
+        col_name = sst_col['column_name']
+        col_id = sst_col['id']
+        expr = sst_col.get('expression') or None
 
-        column_name = sst_column['column_name']
+        # default to Superset metadata
+        desc = sst_col.get('description')
+        label = sst_col.get('verbose_name')
 
-        # add the mandatory fields
-        column_new = {
-            'column_name': column_name,
-            'id': sst_column['id']
-        }
+        if col_name in dbt_columns:
+            # dbt description override for plain columns only
+            dbt_col = dbt_columns[col_name]
+            if 'description' in dbt_col and expr is None:
+                desc = convert_markdown_to_plain_text(dbt_col['description'])
 
-        # add column descriptions
-        if column_name in dbt_columns \
-                and 'description' in dbt_columns[column_name] \
-                and (sst_column['expression'] is None  # database columns
-                     or sst_column['expression'] == ''):
-            description = dbt_columns[column_name]['description']
-            description = convert_markdown_to_plain_text(description)
-        else:
-            description = sst_column['description']
-        column_new['description'] = description
+            # dbt label override for plain columns only
+            meta = dbt_col.get('meta', {})
+            if 'label' in meta and expr is None:
+                label = convert_markdown_to_plain_text(meta['label'])
 
-        columns_new.append(column_new)
+        columns_new.append({
+            'column_name': col_name,
+            'id': col_id,
+            'description': desc,
+            'verbose_name': label,
+        })
 
     dataset['columns_new'] = columns_new
 
-    # add dataset description
-    if dbt_description is None:
-        dataset['description_new'] = sst_description
-    else:
+    # table‐level description
+    if dbt_description is not None:
         dataset['description_new'] = convert_markdown_to_plain_text(dbt_description)
+    else:
+        dataset['description_new'] = sst_description
 
-    # add dataset owner IDs (otherwise Superset empties the owners list)
-    dataset['owners_new'] = [owner['id'] for owner in sst_owners]
-
+    # preserve owners
+    dataset['owners_new'] = [o['id'] for o in sst_owners]
     return dataset
+
 
 
 def check_columns_equal(lst1, lst2):

@@ -1,10 +1,15 @@
 [tool.poetry]
 name = "dbt-superset-lineage"
 version = "0.3.5"
-description = "Make dbt docs and Apache Superset talk to one another"
-authors = ["Michal Kolacek <mkolacek@slido.com>"]
+description = "Fork of slidoapp/dbt-superset-lineage: Make dbt docs and Apache Superset talk to one another"
+authors = ["Michal Kolacek <mkolacek@slidoapp.com>", "Insentric Development Team <insentric-dev@demandlab.com>"]
 readme = "README.md"
-repository = "https://github.com/slidoapp/dbt-superset-lineage"
+repository = "https://github.com/demandlab/dbt-superset-lineage"
+homepage = "https://github.com/demandlab/dbt-superset-lineage"
+
+[tool.poetry.urls]
+Original = "https://github.com/slidoapp/dbt-superset-lineage"
+Fork     = "https://github.com/demandlab/dbt-superset-lineage"
 
 [tool.poetry.scripts]
 dbt-superset-lineage = "dbt_superset_lineage.__init__:app"
@@ -15,9 +20,11 @@ typer = "^0.4.0"
 pathlib = "^1.0.1"
 "ruamel.yaml" = "^0.17.17"
 requests = "^2.26.0"
-bs4 = "^0.0.1"
+beautifulsoup4 = "^4.12.2"
 Markdown = "^3.3.6"
 sqlfluff = ">=1.4.1,<3.0.0"
+
+[tool.poetry.group.dev.dependencies]
 pytest = "^7.2.2"
 
 [build-system]
