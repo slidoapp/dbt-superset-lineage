@@ -2,6 +2,8 @@ import typer
 from .pull_dashboards import main as pull_dashboards_main
 from .push_descriptions import main as push_descriptions_main
 
+__version__ = '0.4.0'
+
 app = typer.Typer()
 
 

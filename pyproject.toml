@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "dbt-superset-lineage"
-version = "0.3.3"
+version = "0.4.0"
 description = "Make dbt docs and Apache Superset talk to one another"
 authors = ["Michal Kolacek <mkolacek@slido.com>"]
 readme = "README.md"
@@ -10,15 +10,17 @@ repository = "https://github.com/slidoapp/dbt-superset-lineage"
 dbt-superset-lineage = "dbt_superset_lineage.__init__:app"
 
 [tool.poetry.dependencies]
-python = "^3.8"
-typer = "^0.4.0"
+python = "^3.10"
+typer = ">=0.4.0,<1.0.0"
 pathlib = "^1.0.1"
-"ruamel.yaml" = "^0.17.17"
-requests = "^2.26.0"
+"ruamel.yaml" = ">=0.17.17"
+requests = ">=2.26.0"
 bs4 = "^0.0.1"
-Markdown = "^3.3.6"
-sqlfluff = ">=1.4.1,<3.0.0"
-pytest = "^7.2.2"
+Markdown = ">=3.3.6"
+sqlfluff = ">=2.3.5"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
