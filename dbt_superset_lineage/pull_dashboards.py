@@ -72,7 +72,7 @@ def get_tables_from_sql(sql, dialect):
     return tables
 
 
-def get_tables_from_dbt(dbt_manifest, dbt_db_name):
+def get_tables_from_dbt(dbt_manifest, dbt_db_name, dbt_schema_name):
     tables = {}
     for table_type in ['nodes', 'sources']:
         manifest_subset = dbt_manifest[table_type]
@@ -85,8 +85,13 @@ def get_tables_from_dbt(dbt_manifest, dbt_db_name):
             source = table['unique_id'].split('.')[-2]
             table_key = schema + '.' + name
 
-            if dbt_db_name is None or database == dbt_db_name:
-                # fail if it breaks uniqueness constraint
+            should_add = (
+                (dbt_db_name is None or database == dbt_db_name) and
+                (dbt_schema_name is None or schema == dbt_schema_name)
+            )
+
+            if should_add:
+                print(f"Adding table {table_key} to tables")
                 assert table_key not in tables, \
                     f"Table {table_key} is a duplicate name (schema + table) across databases. " \
                     "This would result in incorrect matching between Superset and dbt. " \
@@ -99,7 +104,7 @@ def get_tables_from_dbt(dbt_manifest, dbt_db_name):
                     'ref':
                         f"ref('{name}')" if table_type == 'nodes'
                         else f"source('{source}', '{name}')"
-                }
+                    }
 
     assert tables, "Manifest is empty!"
 
@@ -298,8 +303,8 @@ class YamlFormatted(ruamel.yaml.YAML):
 
 
 def main(dbt_project_dir, exposures_path, dbt_db_name,
-         superset_url, superset_db_id, sql_dialect,
-         superset_access_token, superset_refresh_token):
+         dbt_schema_name, superset_url, superset_db_id,
+         sql_dialect, superset_access_token, superset_refresh_token):
 
     # require at least one token for Superset
     assert superset_access_token is not None or superset_refresh_token is not None, \
@@ -326,7 +331,7 @@ def main(dbt_project_dir, exposures_path, dbt_db_name,
         Path(exposures_yaml_path).touch(exist_ok=True)
         exposures = {}
 
-    dbt_tables = get_tables_from_dbt(dbt_manifest, dbt_db_name)
+    dbt_tables = get_tables_from_dbt(dbt_manifest, dbt_db_name, dbt_schema_name)
     dashboards, dashboards_datasets = get_dashboards_from_superset(superset,
                                                                    superset_url,
                                                                    superset_db_id)
