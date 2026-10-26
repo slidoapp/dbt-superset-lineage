@@ -1,3 +1,11 @@
+⚠️ This project is archived and no longer maintained, including security updates.
+
+For similar functionality, consider [Preset CLI / Superset CLI](https://github.com/preset-io/backend-sdk),
+which supports dbt metadata synchronization and exporting charts and dashboards as dbt exposures,
+including with self-hosted Apache Superset. Compatibility and migration have not been verified though.
+
+---
+
 # dbt-superset-lineage
 
 <a href="https://github.com/slidoapp/dbt-superset-lineage/blob/main/LICENSE.md"><img alt="License: MIT" src="https://img.shields.io/github/license/slidoapp/dbt-superset-lineage"></a>
